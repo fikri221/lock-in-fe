@@ -1,20 +1,20 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "@/components/ui/button";
 
 interface TaskInputProps {
-  addTask: (task: string) => void;
+  task: string;
+  setTask: (task: string) => void;
+  onSubmit: () => void;
 }
 
-const TaskInput: React.FC<TaskInputProps> = ({ addTask }) => {
-  const [task, setTask] = useState("");
+const TaskInput: React.FC<TaskInputProps> = ({ task, setTask, onSubmit }) => {
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (task.trim()) {
-      addTask(task);
-      setTask("");
+      onSubmit();
     }
   };
 

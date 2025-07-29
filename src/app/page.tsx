@@ -1,6 +1,5 @@
 import React from 'react';
 import TaskManager from './components/TaskManager';
-// import styles from '../styles/Home.module.css';
 
 const Home: React.FC = () => {
 

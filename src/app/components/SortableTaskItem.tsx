@@ -14,7 +14,7 @@ interface SortableTaskItemProps {
   task: Task;
   index: number;
   editTask: (newText: string, newDuration: number) => void;
-  deleteTask: (id: string) => void;
+  deleteTask: () => void;
   toggleTaskCompletion: () => void;
 }
 
