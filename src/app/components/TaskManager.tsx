@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import TaskInput from "./TaskInput";
 import TaskList from "./TaskList";
 import useTaskManager from "../hooks/useTaskManager"; // Import the custom hook
+import CardListLoading from "./Loading/CardListLoading";
 
 const TaskManager: React.FC = () => {
   // Call the custom hook directly in this component
@@ -41,7 +42,7 @@ const TaskManager: React.FC = () => {
     <div className="min-h-screen">
       <div className="max-w-3xl mx-auto pt-8 pb-14">
         {isLoading ? (
-          <div className="text-center text-gray-500">Loading...</div>
+          <CardListLoading />
         ) : (
           <TaskList
             tasks={tasks}
