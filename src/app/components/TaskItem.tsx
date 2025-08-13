@@ -80,7 +80,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   return (
     <div
-      className={`flex flex-col gap-1 p-4 mb-3 bg-white rounded-xl shadow transition hover:shadow-lg cursor-pointer border ${
+      className={`w-full flex flex-col gap-1 p-4 mb-3 bg-white rounded-xl shadow transition hover:shadow-lg cursor-pointer border ${
         task.completed ? "opacity-60 border-green-400" : "border-gray-200"
       }`}
       onClick={!isEditing ? toggleTaskCompletion : undefined}
@@ -116,40 +116,56 @@ const TaskItem: React.FC<TaskItemProps> = ({
             </button>
           </form>
         ) : (
-          <>
+          <div className="flex-1 flex flex-col gap-1 gap-y-3">
+            {/* Badge waktu aktivitas */}
+           
+            {/* Judul aktivitas */}
             <span
-              className={`text-base ${
-                task.completed ? "line-through text-gray-400" : "text-gray-800"
-              }`}
+              className={`text-base ${task.completed ? "line-through text-gray-400" : "text-gray-800"} ml-6`}
             >
-              {task.text}
+              {task.text.split(" - ").slice(1).join(" - ")}
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                className="text-xs text-blue-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(true);
-                }}
-              >
-                Edit
-              </button>
-              <button
-                className="text-xs text-red-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteTask();
-                }}
-              >
-                Hapus
-              </button>
-              <span className="text-lg">{task.completed ? "✔️" : "⏳"}</span>
+
+            {/* Progression bar */}
+            <div className="w-full mt-2 mb-2 px-2">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-400 h-2 rounded-full transition-all"
+                  style={{
+                    width: `${100 - (secondsLeft / ((task.duration ?? 30) * 60)) * 100}%`,
+                  }}
+                />
+              </div>
+              <div className="text-xs text-gray-500 mt-1 ml-1">
+                {Math.round(100 - (secondsLeft / ((task.duration ?? 30) * 60)) * 100)}%
+              </div>
             </div>
-          </>
+          </div>
         )}
+        <div className="flex items-center gap-2">
+          <button
+            className="text-xs text-blue-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(true);
+            }}
+          >
+            Edit
+          </button>
+          <button
+            className="text-xs text-red-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteTask();
+            }}
+          >
+            Hapus
+          </button>
+          <span className="text-lg">{task.completed ? "✔️" : "⏳"}</span>
+        </div>
       </div>
       {/* Timer Section */}
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex items-center gap-2 mt-2 ml-6">
         {isEditing ? (
           <>
             <input

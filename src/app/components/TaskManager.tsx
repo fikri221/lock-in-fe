@@ -40,7 +40,7 @@ const TaskManager: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-3xl mx-auto pt-8 pb-14">
+      <div className="max-w-3xl mx-auto pt-8 pb-20">
         {isLoading ? (
           <CardListLoading />
         ) : (
