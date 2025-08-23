@@ -4,6 +4,7 @@ import TaskInput from "./TaskInput";
 import TaskList from "./TaskList";
 import useTaskManager from "../hooks/useTaskManager"; // Import the custom hook
 import CardListLoading from "./Loading/CardListLoading";
+import CalendarView from "./CalendarView";
 
 const TaskManager: React.FC = () => {
   // Call the custom hook directly in this component
@@ -40,18 +41,11 @@ const TaskManager: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-3xl mx-auto pt-8 pb-20">
+      <div className="max-w-3xl mx-auto pb-20">
         {isLoading ? (
           <CardListLoading />
         ) : (
-          <TaskList
-            tasks={tasks}
-            editTask={editTask}
-            deleteTask={deleteTask}
-            setTasks={setTasks}
-            toggleTaskCompletion={toggleTaskCompletion}
-            result={result} // Pass the result prop to TaskList"
-          />
+          <CalendarView />
         )}
         <div className="fixed bottom-0 left-0 w-full bg-white px-4 py-6 shadow-md">
           <div className="max-w-3xl mx-auto">

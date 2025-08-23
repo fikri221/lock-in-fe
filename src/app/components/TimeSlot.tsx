@@ -1,0 +1,24 @@
+import { useDroppable } from '@dnd-kit/core';
+import React from 'react'
+
+interface TimeSlotProps {
+    hour: string;
+    onTimeSlotClick: (hour: string) => void;
+}
+
+export default function TimeSlot({ hour, onTimeSlotClick }: TimeSlotProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `timeslot-${hour}`,
+    data: { hour }, // Kirim data jam
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative h-16 border-b border-l border-gray-200 ${isOver ? 'bg-blue-100' : ''}`}
+      onClick={() => onTimeSlotClick(hour)} // Logic untuk buka modal akan ditambahkan di sini
+    >
+      <span className="absolute -top-2 -left-10 text-xs text-gray-500">{hour}</span>
+    </div>
+  );
+}

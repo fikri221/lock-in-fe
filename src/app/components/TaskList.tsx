@@ -6,6 +6,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -78,54 +79,6 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   }, [result, setTasks]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    // Jika drop ke slot jam kosong
-    if (over.id && typeof over.id === "string" && over.id.startsWith("slot-")) {
-      const targetHour = over.id.replace("slot-", "");
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === active.id
-            ? {
-                ...task,
-                text: `${targetHour} - ${task.text.split(" - ")[1]}`,
-              }
-            : task
-        )
-      );
-      return;
-    }
-
-    // Jika drop ke card lain (swap waktu antara card A dan card B)
-    if (active.id !== over.id) {
-      setTasks((prev) => {
-        const activeIdx = prev.findIndex((task) => task.id === active.id);
-        const overIdx = prev.findIndex((task) => task.id === over.id);
-        if (activeIdx === -1 || overIdx === -1) return prev;
-
-        const activeTask = prev[activeIdx];
-        const overTask = prev[overIdx];
-
-        // Swap waktu
-        const activeTime = activeTask.text.split(" - ")[0];
-        const overTime = overTask.text.split(" - ")[0];
-
-        const newTasks = [...prev];
-        newTasks[activeIdx] = {
-          ...activeTask,
-          text: `${overTime} - ${activeTask.text.split(" - ")[1]}`,
-        };
-        newTasks[overIdx] = {
-          ...overTask,
-          text: `${activeTime} - ${overTask.text.split(" - ")[1]}`,
-        };
-        return newTasks;
-      });
-    }
-  };
-
   useEffect(() => {
     if (result) {
       const newTasks = parseResultToTasks(result);
@@ -144,77 +97,21 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   }
 
-  // Gabungkan dengan waktu unik dari task
-  const taskTimes = tasks.map((task) => task.text.split(" - ")[0]);
-  const allSlotsSet = new Set([...slots, ...taskTimes]);
-  const allSlots = Array.from(allSlotsSet).sort((a, b) => {
-    const [ah, am] = a.split(":").map(Number);
-    const [bh, bm] = b.split(":").map(Number);
-    return ah !== bh ? ah - bh : (am ?? 0) - (bm ?? 0);
-  });
-
-  const slotIds = allSlots.map((h) => `slot-${h}`);
-  const sortableItems = [...slotIds, ...tasks.map((task) => task.id)];
+  const hours = Array.from(
+    { length: 24 },
+    (_, i) => `${String(i).padStart(2, "0")}:00`
+  );
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext
-        items={sortableItems}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex">
-          {/* Kolom jam statis */}
-          <div className="flex flex-col items-start min-w-[70px]">
-            {allSlots.map((h) => (
-              <div
-                key={h}
-                className="h-44 flex items-start justify-end text-xs text-gray-400"
-              >
-                {h}
-              </div>
-            ))}
-          </div>
-          {/* Task list sejajar jam */}
-          <div className="flex flex-col flex-1">
-            {allSlots.map((h) => {
-              const taskIdx = tasks.findIndex(
-                (task) => task.text.split(" - ")[0] === h
-              );
-              return (
-                <div
-                  key={h}
-                  className="h-44 flex items-start"
-                  id={`slot-${h}`}
-                  data-id={`slot-${h}`}
-                >
-                  {taskIdx !== -1 ? (
-                    <div className="w-full">
-                      <SortableTaskItem
-                        index={taskIdx}
-                        task={tasks[taskIdx]}
-                        editTask={(newText: string, newDuration: number) =>
-                          editTask(tasks[taskIdx].id, newText, newDuration)
-                        }
-                        deleteTask={() => deleteTask(tasks[taskIdx].id)}
-                        toggleTaskCompletion={() =>
-                          toggleTaskCompletion(taskIdx)
-                        }
-                      />
-                    </div>
-                  ) : (
-                    <SortableSlot id={`slot-${h}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-[50px_1fr] gap-x-2">
+      {hours.map((hour) => (
+        <div key={hour} className="py-2 border-b last:border-b-0">
+          <span className="text-sm text-gray-500">{hour}</span>
         </div>
-      </SortableContext>
-    </DndContext>
+      ))}
+      {/* Area untuk task */}
+      <div className="relative">{/* Di sini task akan dirender */}</div>
+    </div>
   );
 };
 
