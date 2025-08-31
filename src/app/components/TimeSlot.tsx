@@ -16,7 +16,7 @@ export default function TimeSlot({ hour, onTimeSlotClick }: TimeSlotProps) {
     <div
       ref={setNodeRef}
       className={`relative h-16 border-b border-l border-gray-200 ${isOver ? 'bg-blue-100' : ''}`}
-      onClick={() => onTimeSlotClick(hour)} // Logic untuk buka modal akan ditambahkan di sini
+      onClick={() => onTimeSlotClick(hour)}
     >
       <span className="absolute -top-2 -left-10 text-xs text-gray-500">{hour}</span>
     </div>
