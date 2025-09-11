@@ -1,16 +1,30 @@
 "use client"; // Make this a Client Component
 import React, { useState } from "react";
 import TaskInput from "./TaskInput";
-import TaskList from "./TaskList";
 import useTaskManager from "../hooks/useTaskManager"; // Import the custom hook
 import CardListLoading from "./Loading/CardListLoading";
 import CalendarView from "./CalendarView";
 
 const TaskManager: React.FC = () => {
   // Call the custom hook directly in this component
-  const { tasks, editTask, deleteTask, setTasks, toggleTaskCompletion } =
-    useTaskManager();
-  const [task, setTask] = useState<string>("");
+  // const { tasks, editTask, deleteTask, setTasks, toggleTaskCompletion } =
+  //   useTaskManager();
+  // State untuk menyimpan semua task
+    const [tasks, setTasks] = useState([
+      // Contoh data awal
+      {
+        id: "task-1",
+        title: "Meeting Tim A",
+        startMinutes: 9 * 60,
+        durationMinutes: 120,
+      }, // 09:00, 2 jam
+      {
+        id: "task-2",
+        title: "Kerjakan Laporan",
+        startMinutes: 13 * 60 + 30,
+        durationMinutes: 60,
+      }, // 13:30, 1 jam
+    ]);
   const [result, setResult] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,7 +38,7 @@ const TaskManager: React.FC = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({ tasks }),
       });
 
       const data = await res.json();
@@ -35,7 +49,7 @@ const TaskManager: React.FC = () => {
       console.error("Failed to add task:", error);
     } finally {
       setIsLoading(false);
-      setTask(""); // Clear the input field after submission
+      setTasks([]); // Clear the input field after submission
     }
   };
 
@@ -45,11 +59,11 @@ const TaskManager: React.FC = () => {
         {isLoading ? (
           <CardListLoading />
         ) : (
-          <CalendarView />
+          <CalendarView tasks={tasks} setTasks={setTasks} />
         )}
         <div className="fixed bottom-0 left-0 w-full bg-white px-4 py-6 shadow-md">
           <div className="max-w-3xl mx-auto">
-            <TaskInput task={task} setTask={setTask} onSubmit={handleSubmit} />
+            <TaskInput task={tasks} setTask={setTasks} onSubmit={handleSubmit} />
           </div>
         </div>
       </div>
