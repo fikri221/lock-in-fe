@@ -80,7 +80,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   return (
     <div
-      className={`w-full flex flex-col gap-1 p-4 mb-3 bg-white rounded-xl shadow transition hover:shadow-lg cursor-pointer border ${
+      className={`w-full flex flex-col gap-1 p-4 mb-3 rounded-xl shadow transition hover:shadow-lg cursor-pointer border ${
         task.completed ? "opacity-60 border-green-400" : "border-gray-200"
       }`}
       onClick={!isEditing ? toggleTaskCompletion : undefined}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
@@ -11,24 +12,12 @@ import TimeSlot from "./TimeSlot";
 import { AddTaskModal } from "./Modal/AddTaskModal";
 import DraggableTaskItem from "./DraggableTaskItem";
 import CalendarDropContainer from "./CalendarDropContainer";
+import { Task, Tasks } from "@/types/task";
+import { TaskDetailModal } from "./Modal/TaskDetailModal";
 
 interface CalendarViewProps {
-  tasks: Array<{
-    id: string;
-    title: string;
-    startMinutes: number;
-    durationMinutes: number;
-  }>;
-  setTasks: React.Dispatch<
-    React.SetStateAction<
-      Array<{
-        id: string;
-        title: string;
-        startMinutes: number;
-        durationMinutes: number;
-      }>
-    >
-  >;
+  tasks: Tasks;
+  setTasks: React.Dispatch<React.SetStateAction<Tasks>>;
 }
 
 // Konstanta untuk memudahkan kalkulasi
@@ -43,13 +32,17 @@ const hours = Array.from(
 export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState<string | null>(null);
-  const [activeDragData, setActiveDragData] = useState<{
-    id: string;
+  // Menyimpan ID task yang sedang di-drag
+  const [activeId, setActiveId] = useState<string | null>(null);
+  // Menyimpan data kalkulasi real-time untuk preview
+  const [draggedTaskData, setDraggedTaskData] = useState<{
     startTime: number;
     endTime: number;
   } | null>(null);
   // Menggunakan PointerSensor untuk mendapatkan delta pergerakan yang akurat
   const sensors = useSensors(useSensor(PointerSensor));
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Fungsi ini perlu di-resolve saat komponen di-mount untuk mendapatkan nilai pixel aktual.
   // Untuk contoh ini kita hardcode, tapi di app nyata, gunakan `useRef` dan `useEffect`.
@@ -65,6 +58,12 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
     return hour * 60 + minute;
   };
 
+  const handleTaskClick = (task: Task) => {
+    console.log("handleTaskClick di induk dipanggil dengan data:", task);
+    setSelectedTask(task);
+    setIsDetailModalOpen(true);
+  };
+
   const handleTimeSlotClick = (hour: string) => {
     setSelectedHour(hour);
     setIsModalOpen(true);
@@ -74,15 +73,21 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
     title,
     startTime,
     endTime,
+    date,
   }: {
     title: string;
     startTime: string;
     endTime: string;
+    date: string;
   }) => {
     if (selectedHour) {
       // 1. Konversi waktu mulai dan selesai ke format menit
       const startMinutes = timeToStartMinutes(startTime);
       const endMinutes = timeToStartMinutes(endTime);
+
+      // Gabungkan tanggal dengan waktu dari input untuk membuat string ISO
+      const newStartTimeISO = `${date}T${startTime}:00.000Z`;
+      const newEndTimeISO = `${date}T${endTime}:00.000Z`;
 
       // Pastikan waktu selesai setelah waktu mulai
       if (endMinutes <= startMinutes) {
@@ -99,6 +104,8 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
         title,
         startMinutes,
         durationMinutes, // Default durasi 1 jam
+        startTime: newStartTimeISO,
+        endTime: newEndTimeISO,
       };
       setTasks((prev) => [...prev, newTask]);
       setIsModalOpen(false); // Tutup modal setelah save
@@ -106,20 +113,21 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
     }
   };
 
-  const handleDragStart = (event: import("@dnd-kit/core").DragEndEvent) => {
+  const handleDragStart = (event: import("@dnd-kit/core").DragStartEvent) => {
     const { active } = event;
     const taskId = active.id;
-    const task = tasks.find(task => task.id === taskId);
+    const task = tasks.find((task) => task.id === taskId);
     if (task) {
-      setActiveDragData({
-        id: task.id,
+      setActiveId(active.id as string);
+      // Simpan data awal saat mulai drag
+      setDraggedTaskData({
         startTime: task.startMinutes,
         endTime: task.startMinutes + task.durationMinutes,
       });
     }
   };
 
-  const handleDragMove = (event: import("@dnd-kit/core").DragEndEvent) => {
+  const handleDragMove = (event: import("@dnd-kit/core").DragMoveEvent) => {
     const { active, delta } = event;
     const taskId = active.id;
     const task = tasks.find((task) => task.id === taskId);
@@ -132,9 +140,8 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
       Math.round(newStartMinutes / MINUTE_INCREMENT) * MINUTE_INCREMENT;
     const finalMinutes = Math.max(0, Math.min(24 * 60 - 15, snappedMinutes));
 
-    // Perbarui state preview secara real-time
-    setActiveDragData({
-      id: task.id,
+    // HANYA UPDATE STATE PREVIEW, BUKAN STATE UTAMA `tasks`
+    setDraggedTaskData({
       startTime: finalMinutes,
       endTime: finalMinutes + task.durationMinutes,
     });
@@ -164,13 +171,73 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
       Math.min(24 * 60 - currentTask.durationMinutes, snappedMinutes)
     );
 
+    // Cek overlap sebelum update
+    if (isOverlapLimitExceeded(currentTask, finalMinutes, tasks)) {
+      alert("Terlalu banyak task yang bertumpuk!");
+      setDraggedTaskData(null);
+      return; // Jangan update posisi task
+    }
+
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, startMinutes: finalMinutes } : task
       )
     );
-    setActiveDragData(null); // Reset preview saat drag selesai
+    setActiveId(null);
+    setDraggedTaskData(null); // Reset preview saat drag selesai
   };
+
+  // Fungsi cek overlap untuk satu task
+  // const isTaskOverlapped = (currentTask: Task) =>
+  //   tasks.some(
+  //     (task) => task.id !== currentTask.id && isOverlapping(currentTask, [task])
+  //   );
+
+  // Fungsi untuk mendapatkan index overlap
+  function getOverlappedTasks(currentTask: Task, tasks: Tasks) {
+    // Ambil semua task yang overlap dengan currentTask, urutkan berdasarkan id (atau startMinutes)
+    const overlapped = tasks
+      .filter(
+        (task) =>
+          // Cek overlap
+          task.startMinutes <
+            currentTask.startMinutes + currentTask.durationMinutes &&
+          task.startMinutes + task.durationMinutes > currentTask.startMinutes
+      )
+      .sort((a, b) => a.startTime.localeCompare(b.startTime)); // Urutkan berdasarkan endTime agar konsisten
+
+    console.log("Overlapped tasks:", overlapped);
+
+    return overlapped;
+  }
+
+  function getOverlapIndex(currentTask: Task, tasks: Tasks) {
+    const overlapped = getOverlappedTasks(currentTask, tasks);
+    return overlapped.findIndex((t) => t.id === currentTask.id);
+  }
+
+  function getTotalOverlapCount(currentTask: Task, tasks: Tasks) {
+    const overlapped = getOverlappedTasks(currentTask, tasks);
+    return overlapped.length;
+  }
+
+  function isOverlapLimitExceeded(
+    currentTask: Task,
+    newStartMinutes: number,
+    tasks: Task[]
+  ) {
+    // Buat task baru dengan posisi baru
+    const tempTask = { ...currentTask, startMinutes: newStartMinutes };
+    // Hitung overlap dengan task lain
+    const overlapped = tasks.filter(
+      (task) =>
+        task.id !== tempTask.id &&
+        task.startMinutes < tempTask.startMinutes + tempTask.durationMinutes &&
+        task.startMinutes + task.durationMinutes > tempTask.startMinutes
+    );
+    // Jika overlap lebih dari 2 (task ini + 3 lain = 4), return true
+    return overlapped.length > 2;
+  }
 
   // fungsi untuk melakukan snap ke grid
   const snapToGridModifier = (args: {
@@ -189,6 +256,8 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
       y: snappedY,
     };
   };
+  // ✨ 5. SIAPKAN TASK AKTIF UNTUK DITAMPILKAN DI OVERLAY
+  const activeTask = tasks.find((task) => task.id === activeId);
 
   return (
     <>
@@ -199,7 +268,7 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
         onDragEnd={handleDragEnd}
         modifiers={[snapToGridModifier]}
       >
-        <div className="relative w-full max-w-4xl mx-auto bg-white rounded-lg">
+        <div className="relative w-full max-w-4xl mx-auto rounded-lg">
           <div className="grid grid-cols-[auto_1fr] h-[calc(24*4rem)]">
             {/* Kolom Waktu */}
             <div className="flex flex-col">
@@ -229,12 +298,28 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
                 <DraggableTaskItem
                   key={task.id}
                   task={task}
-                  activeDragData={activeDragData}
                   hourHeightInRem={HOUR_HEIGHT_IN_REM}
+                  overlapIndex={getOverlapIndex(task, tasks)}
+                  overlapCount={getTotalOverlapCount(task, tasks)}
+                  onTaskClick={handleTaskClick}
                 />
               ))}
             </CalendarDropContainer>
           </div>
+          <DragOverlay>
+            {activeTask ? (
+              <DraggableTaskItem
+                task={activeTask}
+                hourHeightInRem={HOUR_HEIGHT_IN_REM}
+                // Kirim data preview yang di-update secara real-time
+                dragPreviewData={draggedTaskData}
+                isPreview={true} // Flag untuk styling khusus preview
+                overlapIndex={getOverlapIndex(activeTask, tasks)}
+                overlapCount={getTotalOverlapCount(activeTask, tasks)}
+                onTaskClick={handleTaskClick}
+              />
+            ) : null}
+          </DragOverlay>
         </div>
       </DndContext>
       <AddTaskModal
@@ -242,6 +327,11 @@ export default function CalendarView({ tasks, setTasks }: CalendarViewProps) {
         onOpenChange={setIsModalOpen}
         onSave={handleSaveTask}
         selectedHour={selectedHour ?? undefined}
+      />
+      <TaskDetailModal
+        isOpen={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        task={selectedTask}
       />
     </>
   );

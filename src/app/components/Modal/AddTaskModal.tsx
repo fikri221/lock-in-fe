@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 interface AddTaskModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (task: { title: string; startTime: string; endTime: string }) => void;
+  onSave: (task: { title: string; startTime: string; endTime: string; date: string }) => void;
   selectedHour?: string; // Jam yang dipilih untuk task
 }
 
@@ -33,25 +33,36 @@ export function AddTaskModal({
   const [endTime, setEndTime] = useState<string>(
     new Date().getHours().toString()
   );
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  const localDate = `${yyyy}-${mm}-${dd}`;
+  const [date, setDate] = useState<string>(""); // Format YYYY-MM-DD
 
   // useEffect untuk mengisi input secara otomatis
   useEffect(() => {
     if (selectedHour) {
       // Set waktu mulai sesuai jam yang diklik
-      const hourPart = selectedHour.split(':')[0];
+      const hourPart = selectedHour.split(":")[0];
       setStartTime(selectedHour);
 
       // Set waktu selesai 1 jam setelahnya (default)
       const nextHour = (parseInt(hourPart) + 1) % 24;
-      const formattedNextHour = `${String(nextHour).padStart(2, '0')}:00`;
+      const formattedNextHour = `${String(nextHour).padStart(2, "0")}:00`;
       setEndTime(formattedNextHour); // Default durasi 1 jam
+      // Set default tanggal hari ini dengan format YYYY-MM-DD
+      setDate(localDate);
     }
-  }, [selectedHour]);
+  }, [selectedHour, localDate]);
 
   const handleSave = () => {
     if (title.trim()) {
-      onSave({ title, startTime, endTime });
-      setTitle(""); // Reset form
+      onSave({ title, startTime, endTime, date });
+      setTitle("");
+      setStartTime("");
+      setEndTime("");
+      setDate(localDate);
     }
   };
 
@@ -77,6 +88,20 @@ export function AddTaskModal({
               }
               className="col-span-3"
               autoFocus
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="date" className="text-right">
+              Tanggal
+            </Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setDate(e.target.value)
+              }
+              className="col-span-3"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

@@ -2,10 +2,11 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "@/components/ui/button";
+import { Tasks } from "@/types/task";
 
 interface TaskInputProps {
-  task: Array<{ id: string; title: string; startMinutes: number; durationMinutes: number }>;
-  setTask: (task: Array<{ id: string; title: string; startMinutes: number; durationMinutes: number }>) => void;
+  task: Tasks;
+  setTask: (task: Tasks) => void;
   onSubmit: () => void;
 }
 
