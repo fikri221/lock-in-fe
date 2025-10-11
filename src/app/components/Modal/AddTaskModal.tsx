@@ -17,6 +17,7 @@ interface AddTaskModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (task: { title: string; startTime: string; endTime: string; date: string }) => void;
+  selectedDate: Date; // Tanggal yang dipilih dari DateCarousel
   selectedHour?: string; // Jam yang dipilih untuk task
 }
 
@@ -24,6 +25,7 @@ export function AddTaskModal({
   isOpen,
   onOpenChange,
   onSave,
+  selectedDate,
   selectedHour,
 }: AddTaskModalProps) {
   const [title, setTitle] = useState<string>("");
@@ -33,10 +35,10 @@ export function AddTaskModal({
   const [endTime, setEndTime] = useState<string>(
     new Date().getHours().toString()
   );
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
+  // const today = new Date();
+  const yyyy = selectedDate.getFullYear();
+  const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+  const dd = String(selectedDate.getDate()).padStart(2, "0");
   const localDate = `${yyyy}-${mm}-${dd}`;
   const [date, setDate] = useState<string>(""); // Format YYYY-MM-DD
 

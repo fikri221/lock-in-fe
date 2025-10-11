@@ -3,8 +3,7 @@ export interface Task {
   title: string;
   startMinutes: number;
   durationMinutes: number;
-  startTime: string;
-  endTime: string;
+  date: string;
 }
 
 export type Tasks = Task[];

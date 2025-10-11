@@ -2,8 +2,17 @@
 
 import React, { useMemo, useRef, useState } from "react";
 
-export default function DateCarousel() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+interface DateCarouselProps {
+  selectedDate?: Date;
+  onDateChange?: (date: Date) => void;
+}
+
+export default function DateCarousel({
+  selectedDate = new Date(),
+  onDateChange,
+}: DateCarouselProps) {
+  // State untuk mengelola indeks slide saat ini
+  // const [currentIndex, setCurrentIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0); // posisi offset saat drag
   const startX = useRef<number | null>(null);
 
@@ -12,29 +21,46 @@ export default function DateCarousel() {
     const formatterDay = new Intl.DateTimeFormat("id-ID", { weekday: "long" });
     const formatterDate = new Intl.DateTimeFormat("id-ID", {
       day: "numeric",
-      month: "short",
+      month: "long",
+      year: "numeric",
     });
 
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 365; i++) {
       const d = new Date();
       d.setDate(d.getDate() + i);
       arr.push({
         day: formatterDay.format(d),
         date: formatterDate.format(d),
+        fullDate: d,
       });
     }
     return arr;
   }, []);
 
-  const nextSlide = () => {
-    if (currentIndex < days.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
+  // const nextSlide = () => {
+  //   if (currentIndex < days.length - 1) {
+  //     setCurrentIndex((prev) => prev + 1);
+  //   }
+  // };
 
-  const prevSlide = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+  // const prevSlide = () => {
+  //   if (currentIndex > 0) {
+  //     setCurrentIndex((prev) => prev - 1);
+  //   }
+  // };
+
+  const currentIndex = useMemo(() => {
+    const index = days.findIndex(
+      (d) => d.fullDate.toDateString() === selectedDate.toDateString()
+    );
+
+    return Math.max(0, index);
+  }, [days, selectedDate]);
+  console.log("currentIndex recalculated: ", currentIndex);
+
+  const goToSlide = (index: number) => {
+    if (index >= 0 && index < days.length && onDateChange) {
+      onDateChange(days[index].fullDate);
     }
   };
 
@@ -64,10 +90,12 @@ export default function DateCarousel() {
 
     if (diff > 50) {
       // geser kiri → next
-      nextSlide();
+      // nextSlide();
+      goToSlide(currentIndex + 1);
     } else if (diff < -50) {
       // geser kanan → prev
-      prevSlide();
+      // prevSlide();
+      goToSlide(currentIndex - 1);
     }
 
     setDragOffset(0);
@@ -102,13 +130,15 @@ export default function DateCarousel() {
             {days.map((d, idx) => (
               <div
                 key={idx}
-                className="flex-shrink-0 w-full flex flex-col items-center justify-center rounded-lg" // Memberi tinggi & padding konsisten
+                className="flex-shrink-0 w-full flex flex-col items-center justify-center p-2" // Tambah padding
               >
                 {/* Tipografi yang lebih baik */}
-                <span className="text-xl font-semibold">
+                <span className="text-xl font-semibold tracking-tight text-gray-800 dark:text-gray-100">
                   {d.day}
                 </span>
-                <span className="text-sm">{d.date}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {d.date}
+                </span>
               </div>
             ))}
           </div>
@@ -116,8 +146,7 @@ export default function DateCarousel() {
 
         {/* Tombol Prev */}
         <button
-          onClick={() => setCurrentIndex((i) => Math.max(i - 1, 0))}
-          disabled={currentIndex === 0}
+          onClick={() => goToSlide(currentIndex - 1)}
           className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/80 text-gray-700 p-2 rounded-full shadow-md hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           aria-label="Previous slide"
         >
@@ -140,10 +169,7 @@ export default function DateCarousel() {
 
         {/* Tombol Next */}
         <button
-          onClick={() =>
-            setCurrentIndex((i) => Math.min(i + 1, days.length - 1))
-          }
-          disabled={currentIndex === days.length - 1}
+          onClick={() => goToSlide(currentIndex + 1)}
           className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/80 text-gray-700 p-2 rounded-full shadow-md hover:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           aria-label="Next slide"
         >

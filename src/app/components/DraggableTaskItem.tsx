@@ -155,7 +155,7 @@ export default function DraggableTaskItem({
       `}
     >
       {/* DIV KONTEN (untuk diklik) */}
-      <div className="flex-grow cursor-pointer" onClick={() => handleClick()}>
+      <div className="flex-grow cursor-pointer" onClick={handleClick}>
         <p className="font-semibold text-sm text-white dark:text-gray-100">
           {task.title}
         </p>
