@@ -1,14 +1,21 @@
-import { useDroppable } from '@dnd-kit/core';
-import React from 'react'
+import { useDroppable } from "@dnd-kit/core";
+import React from "react";
 
 interface TimeSlotProps {
-    hour: string;
-    onTimeSlotClick: (hour: string) => void;
+  hour: string;
+  slotId: string;
+  onTimeSlotClick: (hour: string) => void;
+  style: React.CSSProperties; // 1. Terima style prop
 }
 
-export default function TimeSlot({ hour, onTimeSlotClick }: TimeSlotProps) {
+export default React.memo(function TimeSlot({
+  hour,
+  slotId,
+  onTimeSlotClick,
+  style,
+}: TimeSlotProps) {
   const { setNodeRef, isOver } = useDroppable({
-    id: `timeslot-${hour}`,
+    id: `timeslot-${slotId}`,
     data: { hour }, // Kirim data jam
   });
 
@@ -21,4 +28,4 @@ export default function TimeSlot({ hour, onTimeSlotClick }: TimeSlotProps) {
       <span className="absolute -top-2 -left-10 text-xs text-gray-500">{hour}</span>
     </div>
   );
-}
+});

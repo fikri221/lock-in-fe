@@ -9,7 +9,7 @@ interface MonthlyCalendarViewProps {
   onDateChange: (date: Date | undefined) => void;
 }
 
-export default function MonthlyCalendarView({
+export default React.memo(function MonthlyCalendarView({
   selectedDate,
   onDateChange,
 }: MonthlyCalendarViewProps) {
@@ -27,4 +27,4 @@ export default function MonthlyCalendarView({
       />
     </div>
   );
-}
+});

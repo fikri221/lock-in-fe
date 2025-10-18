@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -9,11 +9,18 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import TimeSlot from "./TimeSlot";
-import { AddTaskModal } from "./Modal/AddTaskModal";
 import DraggableTaskItem from "./DraggableTaskItem";
 import CalendarDropContainer from "./CalendarDropContainer";
 import { Task, Tasks } from "@/types/task";
-import { TaskDetailModal } from "./Modal/TaskDetailModal";
+import dynamic from "next/dynamic";
+
+// Impor modal menggunakan dynamic import
+const AddTaskModal = dynamic(() =>
+  import("./Modal/AddTaskModal").then((mod) => mod.AddTaskModal)
+);
+const TaskDetailModal = dynamic(() =>
+  import("./Modal/TaskDetailModal").then((mod) => mod.TaskDetailModal)
+);
 
 interface CalendarViewProps {
   tasks: Tasks;
@@ -41,9 +48,13 @@ function getOverlappedTasks(currentTask: Task, tasks: Tasks) {
           currentTask.startMinutes + currentTask.durationMinutes &&
         task.startMinutes + task.durationMinutes > currentTask.startMinutes
     )
-    .sort((a, b) => a.startMinutes - b.startMinutes); // Urutkan berdasarkan endTime agar konsisten
-
-  // console.log("Overlapped tasks:", overlapped);
+    .sort((a, b) => {
+      if (a.startMinutes !== b.startMinutes) {
+        return a.startMinutes - b.startMinutes;
+      }
+      // Jika waktu mulai sama, urutkan berdasarkan ID agar konsisten
+      return a.id.localeCompare(b.id);
+    }); // Urutkan berdasarkan endTime agar konsisten
 
   return overlapped;
 }
@@ -68,10 +79,11 @@ export default function CalendarView({
   // Menyimpan ID task yang sedang di-drag
   const [activeId, setActiveId] = useState<string | null>(null);
   // Menyimpan data kalkulasi real-time untuk preview
-  const [draggedTaskData, setDraggedTaskData] = useState<{
+  const [dragPreviewData, setDragPreviewData] = useState<{
     startTime: number;
     endTime: number;
   } | null>(null);
+  const throttleTimeout = useRef<NodeJS.Timeout | null>(null);
   // Menggunakan PointerSensor untuk mendapatkan delta pergerakan yang akurat
   const sensors = useSensors(useSensor(PointerSensor));
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
@@ -81,13 +93,6 @@ export default function CalendarView({
   // Untuk contoh ini kita hardcode, tapi di app nyata, gunakan `useRef` dan `useEffect`.
   const PIXELS_PER_REM = 16;
   const hourHeightInPixels = HOUR_HEIGHT_IN_REM * PIXELS_PER_REM;
-
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(
-      (task) =>
-        new Date(task.date).toDateString() === selectedDate.toDateString()
-    );
-  }, [tasks, selectedDate]);
 
   // Fungsi konversi yang sudah kita punya
   const timeToStartMinutes = (timeString: string) => {
@@ -158,83 +163,96 @@ export default function CalendarView({
     (event: import("@dnd-kit/core").DragStartEvent) => {
       const { active } = event;
       const taskId = active.id;
-      const task = filteredTasks.find((task) => task.id === taskId);
+      const task = tasks.find((task) => task.id === taskId);
       if (task) {
         setActiveId(active.id as string);
         // Simpan data awal saat mulai drag
-        setDraggedTaskData({
+        setDragPreviewData({
           startTime: task.startMinutes,
           endTime: task.startMinutes + task.durationMinutes,
         });
       }
     },
-    [filteredTasks]
+    [tasks]
   );
 
   const handleDragMove = useCallback(
     (event: import("@dnd-kit/core").DragMoveEvent) => {
-      const { active, delta } = event;
-      const taskId = active.id;
-      const task = filteredTasks.find((task) => task.id === taskId);
-      if (!task) return;
+      if (throttleTimeout.current) return;
 
-      // Logika kalkulasi sama seperti di handleDragEnd
-      const deltaMinutes = (delta.y / hourHeightInPixels) * 60;
-      const newStartMinutes = task.startMinutes + deltaMinutes;
-      const snappedMinutes =
-        Math.round(newStartMinutes / MINUTE_INCREMENT) * MINUTE_INCREMENT;
-      const finalMinutes = Math.max(0, Math.min(24 * 60 - 15, snappedMinutes));
+      // console.log({
+      //   deltaY: event.delta.y,
+      //   scrollTop: getScrollY(),
+      //   totalDeltaY: event.delta.y + (calendarGridRef.current?.scrollTop ?? 0),
+      // });
 
-      // HANYA UPDATE STATE PREVIEW, BUKAN STATE UTAMA `tasks`
-      setDraggedTaskData({
-        startTime: finalMinutes,
-        endTime: finalMinutes + task.durationMinutes,
-      });
+      throttleTimeout.current = setTimeout(() => {
+        const { active, delta } = event;
+        const taskId = active.id;
+        const task = tasks.find((t) => t.id === taskId);
+        if (!task) return;
+
+        // Konversi ke menit
+        const deltaMinutes = (delta.y / hourHeightInPixels) * 60;
+
+        // Hitung posisi baru
+        const newStartMinutes = task.startMinutes + deltaMinutes;
+        const snappedMinutes =
+          Math.round(newStartMinutes / MINUTE_INCREMENT) * MINUTE_INCREMENT;
+
+        // Update hanya preview
+        setDragPreviewData({
+          startTime: Math.max(0, Math.min(24 * 60 - 15, snappedMinutes)),
+          endTime: Math.max(
+            0,
+            Math.min(24 * 60, snappedMinutes + task.durationMinutes)
+          ),
+        });
+
+        throttleTimeout.current = null;
+      }, 5);
     },
-    [filteredTasks, hourHeightInPixels]
+    [tasks, hourHeightInPixels]
   );
 
   const handleDragEnd = useCallback(
     (event: import("@dnd-kit/core").DragEndEvent) => {
-      const { active, delta } = event;
-      const taskId = active.id;
-
-      // Cari task yang sedang di-drag
-      const currentTask = filteredTasks.find((task) => task.id === taskId);
-      if (!currentTask) return;
-
-      // Hitung perubahan posisi dalam menit
-      const deltaMinutes = (delta.y / hourHeightInPixels) * 60;
-
-      // Hitung total menit yang baru
-      const newStartMinutes = currentTask.startMinutes + deltaMinutes;
-
-      // "Snap" ke kelipatan 15 menit terdekat
-      const snappedMinutes =
-        Math.round(newStartMinutes / MINUTE_INCREMENT) * MINUTE_INCREMENT;
-
-      // Batasi agar tidak keluar dari rentang 00:00 - 23:59
-      const finalMinutes = Math.max(
-        0,
-        Math.min(24 * 60 - currentTask.durationMinutes, snappedMinutes)
-      );
-
-      // Cek overlap sebelum update
-      if (isOverlapLimitExceeded(currentTask, finalMinutes, filteredTasks)) {
-        alert("Terlalu banyak task yang bertumpuk!");
-        setDraggedTaskData(null);
-        return; // Jangan update posisi task
+      if (throttleTimeout.current) {
+        clearTimeout(throttleTimeout.current);
+        throttleTimeout.current = null;
       }
 
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          task.id === taskId ? { ...task, startMinutes: finalMinutes } : task
+      const { active, delta } = event;
+      const taskId = active.id;
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      
+      const deltaMinutes = (delta.y / hourHeightInPixels) * 60;
+
+      // Jangan lakukan double snapping, cukup sekali di sini
+      const newStartMinutes = task.startMinutes + deltaMinutes;
+      const finalMinutes = Math.max(
+        0,
+        Math.min(24 * 60 - task.durationMinutes, newStartMinutes)
+      );
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                startMinutes:
+                  Math.round(finalMinutes / MINUTE_INCREMENT) *
+                  MINUTE_INCREMENT,
+              }
+            : t
         )
       );
+
       setActiveId(null);
-      setDraggedTaskData(null); // Reset preview saat drag selesai
+      setDragPreviewData(null);
     },
-    [filteredTasks, hourHeightInPixels, setTasks]
+    [hourHeightInPixels, tasks, setTasks]
   );
 
   // Fungsi cek overlap untuk satu task
@@ -243,23 +261,23 @@ export default function CalendarView({
   //     (task) => task.id !== currentTask.id && isOverlapping(currentTask, [task])
   //   );
 
-  function isOverlapLimitExceeded(
-    currentTask: Task,
-    newStartMinutes: number,
-    tasks: Task[]
-  ) {
-    // Buat task baru dengan posisi baru
-    const tempTask = { ...currentTask, startMinutes: newStartMinutes };
-    // Hitung overlap dengan task lain
-    const overlapped = tasks.filter(
-      (task) =>
-        task.id !== tempTask.id &&
-        task.startMinutes < tempTask.startMinutes + tempTask.durationMinutes &&
-        task.startMinutes + task.durationMinutes > tempTask.startMinutes
-    );
-    // Jika overlap lebih dari 2 (task ini + 3 lain = 4), return true
-    return overlapped.length > 2;
-  }
+  // function isOverlapLimitExceeded(
+  //   currentTask: Task,
+  //   newStartMinutes: number,
+  //   tasks: Task[]
+  // ) {
+  //   // Buat task baru dengan posisi baru
+  //   const tempTask = { ...currentTask, startMinutes: newStartMinutes };
+  //   // Hitung overlap dengan task lain
+  //   const overlapped = tasks.filter(
+  //     (task) =>
+  //       task.id !== tempTask.id &&
+  //       task.startMinutes < tempTask.startMinutes + tempTask.durationMinutes &&
+  //       task.startMinutes + task.durationMinutes > tempTask.startMinutes
+  //   );
+  //   // Jika overlap lebih dari 2 (task ini + 3 lain = 4), return true
+  //   return overlapped.length > 2;
+  // }
 
   // fungsi untuk melakukan snap ke grid
   const snapToGridModifier = useCallback(
@@ -285,17 +303,20 @@ export default function CalendarView({
   // PERBAIKAN 2: Stabilkan array modifiers dengan useMemo
   const modifiers = useMemo(() => [snapToGridModifier], [snapToGridModifier]);
 
-  // ✨ 5. SIAPKAN TASK AKTIF UNTUK DITAMPILKAN DI OVERLAY
-  const activeTask = filteredTasks.find((task) => task.id === activeId);
-
   const tasksWithOverlap = useMemo(() => {
     // console.log("Recalculating overlap for all tasks..."); // Ini hanya akan muncul saat `tasks` berubah
-    return filteredTasks.map((task) => ({
+    return tasks.map((task) => ({
       ...task,
-      overlapIndex: getOverlapIndex(task, filteredTasks),
-      overlapCount: getTotalOverlapCount(task, filteredTasks),
+      overlapIndex: getOverlapIndex(task, tasks),
+      overlapCount: getTotalOverlapCount(task, tasks),
     }));
-  }, [filteredTasks]);
+  }, [tasks]);
+
+  // SIAPKAN TASK AKTIF UNTUK DITAMPILKAN DI OVERLAY
+  const activeTask = useMemo(
+    () => tasksWithOverlap.find((task) => task.id === activeId),
+    [activeId, tasksWithOverlap]
+  );
 
   return (
     <>
@@ -323,13 +344,20 @@ export default function CalendarView({
             {/* Kolom Grid Kalender */}
             <CalendarDropContainer>
               {/* Garis-garis jam hanya untuk visual */}
-              {Array.from({ length: 24 }).map((_, i) => (
-                <TimeSlot
-                  key={i}
-                  hour={`${String(i).padStart(2, "0")}:00`}
-                  onTimeSlotClick={handleTimeSlotClick}
-                />
-              ))}
+              {Array.from({ length: 24 }).map((_, i) => {
+                const hourString = `${String(i).padStart(2, "0")}:00`;
+                // Hitung posisi 'top' sama seperti menghitungnya untuk task
+                const topPositionRem = i * HOUR_HEIGHT_IN_REM;
+                return (
+                  <TimeSlot
+                    key={hourString}
+                    slotId={`timeslot-${hourString}`}
+                    hour={hourString} // Kirim 'hour' sebagai prop
+                    onTimeSlotClick={handleTimeSlotClick}
+                    style={{ top: `${topPositionRem}rem` }}
+                  />
+                );
+              })}
 
               {/* Render Task */}
               {tasksWithOverlap.map((task) => (
@@ -349,18 +377,12 @@ export default function CalendarView({
               <DraggableTaskItem
                 task={activeTask}
                 hourHeightInRem={HOUR_HEIGHT_IN_REM}
-                // Kirim data preview yang di-update secara real-time
-                dragPreviewData={draggedTaskData}
                 isPreview={true} // Flag untuk styling khusus preview
-                overlapIndex={
-                  tasksWithOverlap.find((t) => t.id === activeTask.id)
-                    ?.overlapIndex ?? 0
-                }
-                overlapCount={
-                  tasksWithOverlap.find((t) => t.id === activeTask.id)
-                    ?.overlapCount ?? 1
-                }
+                // Kita bisa hitung overlap untuk preview secara real-time
+                overlapIndex={activeTask.overlapIndex}
+                overlapCount={activeTask.overlapCount}
                 onTaskClick={handleTaskClick}
+                dragPreviewData={dragPreviewData}
               />
             ) : null}
           </DragOverlay>

@@ -56,7 +56,6 @@ export default function DateCarousel({
 
     return Math.max(0, index);
   }, [days, selectedDate]);
-  console.log("currentIndex recalculated: ", currentIndex);
 
   const goToSlide = (index: number) => {
     if (index >= 0 && index < days.length && onDateChange) {

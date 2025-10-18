@@ -79,7 +79,7 @@ const TaskManager: React.FC = () => {
                 <CardListLoading />
               ) : (
                 <CalendarView
-                  tasks={tasks}
+                  tasks={visibleTasks}
                   setTasks={setTasks}
                   selectedDate={selectedDate}
                 />

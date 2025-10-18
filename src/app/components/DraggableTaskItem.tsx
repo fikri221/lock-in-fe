@@ -9,20 +9,28 @@ interface DraggableTaskItemProps {
   hourHeightInRem: number;
   overlapIndex?: number;
   overlapCount?: number;
-  color?: string; // Prop opsional untuk warna aksen
   onTaskClick: (task: Task) => void;
   dragPreviewData?: { startTime: number; endTime: number } | null;
   isPreview?: boolean; // Flag untuk styling
 }
 
-export default function DraggableTaskItem({
+// Format waktu untuk ditampilkan (opsional)
+const formatTime = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
+    2,
+    "0"
+  )}`;
+};
+
+export default React.memo(function DraggableTaskItem({
   task,
   dragPreviewData,
   isPreview = false,
   hourHeightInRem,
   overlapIndex = 0, // Default 0
   overlapCount = 1, // Default 1
-  color = "blue", // Default biru
   onTaskClick,
 }: DraggableTaskItemProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -33,16 +41,6 @@ export default function DraggableTaskItem({
   // Kalkulasi posisi dan tinggi berdasarkan menit
   const topPositionInRem = (task.startMinutes / 60) * hourHeightInRem;
   const heightInRem = (task.durationMinutes / 60) * hourHeightInRem;
-
-  // Format waktu untuk ditampilkan (opsional)
-  const formatTime = (totalMinutes: number) => {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
-      2,
-      "0"
-    )}`;
-  };
 
   const startTime = formatTime(
     dragPreviewData ? dragPreviewData.startTime : task.startMinutes
@@ -58,38 +56,46 @@ export default function DraggableTaskItem({
   // Jika overlapCount adalah 2, berarti ada 2 item yang tumpang tindih
   // Jika overlapCount adalah 3, berarti ada 3 item yang tumpang tindih
   // dst.
-  const widthPercent = 100 / overlapCount;
+  const safeOverlapCount = Math.max(overlapCount ?? 1, 1);
+  const widthPercent = 100 / safeOverlapCount;
+
   // const widthPercent = isOverlapped ? 50 : 100; // Contoh: 50% jika overlapped, 100% jika tidak
   // const leftPercent = isOverlapped ? widthPercent * overlapIndex : 0; // Geser berdasarkan index jika overlapped
   // Kalkulasi left dalam persen berdasarkan index dan lebar
   const leftPercent = widthPercent * overlapIndex;
 
-  const overlappedStyle =
-    overlapCount > 1
-      ? {
-          width: `calc(${widthPercent}% - 8px)`,
-          left: `calc(${leftPercent}% + 5px)`,
-        }
-      : {
-          width: "calc(100% - 10px)",
-          left: "5px",
-        };
+  // const overlappedStyle =
+  //   overlapCount > 1
+  //     ? {
+  //         width: `calc(${widthPercent}% - 8px)`,
+  //         left: `calc(${leftPercent}% + 5px)`,
+  //       }
+  //     : {
+  //         width: "calc(100% - 10px)",
+  //         left: "5px",
+  //       };
 
   // Objek style dasar yang sama untuk keduanya (asli & preview)
   const baseStyle: React.CSSProperties = {
     height: `${heightInRem}rem`,
     width:
-      overlapCount > 1 ? `calc(${widthPercent}% - 8px)` : "calc(100% - 10px)",
+      overlapCount > -1
+        ? `calc((100% / ${overlapCount}) - 8px)`
+        : "calc(100% - 10px)",
   };
 
   // Objek style yang akan digabungkan
   let finalStyle: React.CSSProperties;
 
   if (isPreview) {
-    // Style HANYA untuk PREVIEW (di dalam DragOverlay)
-    // TIDAK ADA 'top' atau 'left'. Biarkan dnd-kit yang mengatur posisi.
+    // Ambil ukuran asli elemen sebelum di-drag
+    const originalWidth = "100%";
+
     finalStyle = {
       ...baseStyle,
+      width: originalWidth, // fix: hindari calc relatif terhadap viewport
+      position: "relative", // biar tidak bergantung posisi absolute parent
+      left: 0,
       boxShadow:
         "0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)",
     };
@@ -150,7 +156,7 @@ export default function DraggableTaskItem({
         bg-gray-800 dark:bg-slate-800
         border-l-4 border-gray-500 dark:border-gray-400
         shadow-sm hover:shadow-md hover:bg-gray-600 dark:hover:bg-slate-700/50
-        ${isDragging ? "opacity-80 shadow-xl" : "opacity-100"}
+        ${isDragging ? "opacity-80 shadow-xl" : "opacity-50"}
         ${isPreview ? "z-50" : ""}
       `}
     >
@@ -175,4 +181,4 @@ export default function DraggableTaskItem({
       </div>
     </div>
   );
-}
+});
