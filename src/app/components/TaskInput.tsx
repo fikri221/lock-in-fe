@@ -2,10 +2,11 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { Button } from "@/components/ui/button";
+import { Tasks } from "@/types/task";
 
 interface TaskInputProps {
-  task: string;
-  setTask: (task: string) => void;
+  task: Tasks;
+  setTask: (task: Tasks) => void;
   onSubmit: () => void;
 }
 
@@ -13,7 +14,7 @@ const TaskInput: React.FC<TaskInputProps> = ({ task, setTask, onSubmit }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (task.trim()) {
+    if (task.length > 0) {
       onSubmit();
     }
   };
@@ -25,8 +26,14 @@ const TaskInput: React.FC<TaskInputProps> = ({ task, setTask, onSubmit }) => {
           minRows={1}
           maxRows={5}
           placeholder="Type your message..."
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
+          value={task[0]?.title ?? ""}
+          onChange={(e) => {
+            const updatedTask = [...task];
+            if (updatedTask.length > 0) {
+              updatedTask[0] = { ...updatedTask[0], title: e.target.value };
+              setTask(updatedTask);
+            }
+          }}
           className="flex-1 resize-none border-none bg-transparent focus:ring-0 focus:outline-none text-sm"
         />
         <Button type="submit" className="shrink-0">
