@@ -42,6 +42,31 @@ export default React.memo(function DraggableTaskItem({
   const topPositionInRem = (task.startMinutes / 60) * hourHeightInRem;
   const heightInRem = (task.durationMinutes / 60) * hourHeightInRem;
 
+  // SNAP TRANSFORM
+  let snappedTransform = transform;
+  if (transform && isDragging && !isPreview) {
+    // Konversi 1rem = 16px
+    const pixelsPerRem = 16;
+    const hourHeightInPixels = hourHeightInRem * pixelsPerRem;
+    const pixelsPerSnap = (hourHeightInPixels / 60) * 15; // 15 menit
+
+    // Hitung posisi absolut setelah transform
+    const currentTopPixels = topPositionInRem * pixelsPerRem;
+    const newTopPixels = currentTopPixels + transform.y;
+
+    // Snap ke grid terdekat
+    const snappedTopPixels =
+      Math.round(newTopPixels / pixelsPerSnap) * pixelsPerSnap;
+
+    // Hitung transform Y yang di-snap
+    const snappedY = snappedTopPixels - currentTopPixels;
+
+    snappedTransform = {
+      ...transform,
+      y: snappedY,
+    };
+  }
+
   const startTime = formatTime(
     dragPreviewData ? dragPreviewData.startTime : task.startMinutes
   );
@@ -79,7 +104,7 @@ export default React.memo(function DraggableTaskItem({
   const baseStyle: React.CSSProperties = {
     height: `${heightInRem}rem`,
     width:
-      overlapCount > -1
+      overlapCount > 0
         ? `calc((100% / ${overlapCount}) - 8px)`
         : "calc(100% - 10px)",
   };
@@ -110,10 +135,10 @@ export default React.memo(function DraggableTaskItem({
       ...baseStyle,
       ...overlappedPosition, // Terapkan 'left'
       top: `${topPositionInRem}rem`, // Terapkan 'top'
-      transform: transform
-        ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      transform: snappedTransform
+        ? `translate3d(${snappedTransform.x}px, ${snappedTransform.y}px, 0)`
         : undefined,
-      opacity: isDragging ? 0 : 1, // Sembunyikan item asli saat di-drag
+      visibility: isDragging ? "hidden" : "visible", // Sembunyikan item asli saat di-drag
     };
   }
 
@@ -156,7 +181,6 @@ export default React.memo(function DraggableTaskItem({
         bg-gray-800 dark:bg-slate-800
         border-l-4 border-gray-500 dark:border-gray-400
         shadow-sm hover:shadow-md hover:bg-gray-600 dark:hover:bg-slate-700/50
-        ${isDragging ? "opacity-80 shadow-xl" : "opacity-50"}
         ${isPreview ? "z-50" : ""}
       `}
     >

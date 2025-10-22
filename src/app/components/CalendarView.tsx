@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { restrictToParentElement } from "@dnd-kit/modifiers";
 import TimeSlot from "./TimeSlot";
 import DraggableTaskItem from "./DraggableTaskItem";
 import CalendarDropContainer from "./CalendarDropContainer";
@@ -89,6 +90,8 @@ export default function CalendarView({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
+  const calendarGridRef = useRef<HTMLDivElement>(null);
+
   // Fungsi ini perlu di-resolve saat komponen di-mount untuk mendapatkan nilai pixel aktual.
   // Untuk contoh ini kita hardcode, tapi di app nyata, gunakan `useRef` dan `useEffect`.
   const PIXELS_PER_REM = 16;
@@ -157,7 +160,6 @@ export default function CalendarView({
     },
     [selectedHour, setTasks]
   );
-  // console.log("Rendering CalendarView with tasks:", tasks);
 
   const handleDragStart = useCallback(
     (event: import("@dnd-kit/core").DragStartEvent) => {
@@ -210,7 +212,7 @@ export default function CalendarView({
         });
 
         throttleTimeout.current = null;
-      }, 5);
+      }, 10);
     },
     [tasks, hourHeightInPixels]
   );
@@ -226,7 +228,7 @@ export default function CalendarView({
       const taskId = active.id;
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
-      
+
       const deltaMinutes = (delta.y / hourHeightInPixels) * 60;
 
       // Jangan lakukan double snapping, cukup sekali di sini
@@ -252,7 +254,7 @@ export default function CalendarView({
       setActiveId(null);
       setDragPreviewData(null);
     },
-    [hourHeightInPixels, tasks, setTasks]
+    [tasks, hourHeightInPixels, setTasks]
   );
 
   // Fungsi cek overlap untuk satu task
@@ -280,31 +282,52 @@ export default function CalendarView({
   // }
 
   // fungsi untuk melakukan snap ke grid
-  const snapToGridModifier = useCallback(
-    (args: {
-      transform: { x: number; y: number; scaleX: number; scaleY: number };
-    }) => {
-      const { transform } = args;
+  // const snapToGridModifier = useCallback(
+  //   (args: {
+  //     transform: { x: number; y: number; scaleX: number; scaleY: number };
+  //     active?: any;
+  //     over?: any;
+  //   }) => {
+  //     const { transform, active } = args;
 
-      // Hitung berapa tinggi pixel untuk setiap blok 'snap' (15 menit)
-      const pixelsPerSnap = (hourHeightInPixels / 60) * MINUTE_INCREMENT;
+  //     // Pastikan active dan active.id ada
+  //     if (!active || !active.id) return transform;
 
-      // Bulatkan posisi y dari transform ke kelipatan 'pixelsPerSnap' terdekat
-      const snappedY = Math.round(transform.y / pixelsPerSnap) * pixelsPerSnap;
+  //     // Dapatkan task yang sedang di-drag
+  //     const task = tasks.find((t) => t.id === active.id);
+  //     if (!task) return transform;
 
-      return {
-        ...transform,
-        y: snappedY,
-      };
-    },
-    [hourHeightInPixels]
-  );
+  //     // Hitung posisi absolut task (dalam pixel)
+  //     const currentTopInPixels = (task.startMinutes / 60) * hourHeightInPixels;
+
+  //     // Hitung posisi baru setelah transform (TANPA scroll compensation)
+  //     const newTopInPixels = currentTopInPixels + transform.y;
+
+  //     // Hitung berapa tinggi pixel untuk setiap blok 'snap' (15 menit)
+  //     const pixelsPerSnap = (hourHeightInPixels / 60) * MINUTE_INCREMENT;
+
+  //     // Snap posisi absolut ke grid terdekat
+  //     const snappedAbsoluteTop =
+  //       Math.round(newTopInPixels / pixelsPerSnap) * pixelsPerSnap;
+
+  //     // Hitung transform Y yang diperlukan untuk mencapai posisi snapped
+  //     const snappedY = snappedAbsoluteTop - currentTopInPixels;
+
+  //     return {
+  //       ...transform,
+  //       y: snappedY,
+  //     };
+  //   },
+  //   [hourHeightInPixels, tasks]
+  // );
 
   // PERBAIKAN 2: Stabilkan array modifiers dengan useMemo
-  const modifiers = useMemo(() => [snapToGridModifier], [snapToGridModifier]);
+  const modifiers = useMemo(
+    () => [restrictToParentElement],
+    []
+  );
 
   const tasksWithOverlap = useMemo(() => {
-    // console.log("Recalculating overlap for all tasks..."); // Ini hanya akan muncul saat `tasks` berubah
     return tasks.map((task) => ({
       ...task,
       overlapIndex: getOverlapIndex(task, tasks),
@@ -326,6 +349,10 @@ export default function CalendarView({
         onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         modifiers={modifiers}
+        autoScroll={{
+          // Nonaktifkan kompensasi tata letak
+          layoutShiftCompensation: false,
+        }}
       >
         <div className="relative w-full rounded-lg px-6 py-4 ml-4">
           <div className="grid grid-cols-[auto_1fr] h-[calc(24*4rem)]">
