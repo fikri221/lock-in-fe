@@ -1,8 +1,9 @@
 import React from "react";
-import TaskManager from "./components/TaskManager";
+import TaskManager from "./old_comps/TaskManager";
+import HabitTracker from "@/components/HabitTracker";
 
 const Home: React.FC = () => {
-  return <TaskManager />;
+  return <HabitTracker />;
 };
 
 export default Home;
