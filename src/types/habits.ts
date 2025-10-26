@@ -9,11 +9,11 @@ export interface HabitTrackerProps {
   completions: Completions;
 }
 
-type Completions = {
+export type Completions = {
   [date: string]: CompletionRecord;
 };
 
-type CompletionRecord = {
+export type CompletionRecord = {
   type: HabitCompletionType;
   duration: number;
   reason: string;
