@@ -1,29 +1,7 @@
-// export interface HabitTrackerProps {
-//   id: string;
-//   name: string;
-//   why: string;
-//   minDuration: number;
-//   idealDuration: number;
-//   frequency: HabitFrequency;
-//   customDays?: number[]; // For weekly frequency, days of the week (0-6) to perform the habit
-//   completions: Completions;
-// }
-
-// export type Completions = {
-//   [date: string]: CompletionRecord;
-// };
-
-// export type CompletionRecord = {
-//   type: HabitCompletionType;
-//   duration: number;
-//   reason: string;
-//   timestamp: string;
-// };
-
 export enum LogCompletionType {
-  FULL = "COMPLETED",
-  PARTIAL = "SKIPPED",
-  SKIP = "FAILED",
+  COMPLETED = "COMPLETED",
+  SKIPPED = "SKIPPED",
+  FAILED = "FAILED",
 }
 
 export enum HabitFrequency {
@@ -38,7 +16,7 @@ export enum HabitViewMode {
   INSIGHTS = "insights",
 }
 
-export interface Habit {
+export interface CreateHabitRequest {
   name: string;
   description?: string;
   type?: string;
@@ -48,6 +26,27 @@ export interface Habit {
   isWeatherDependent?: boolean;
   requiresGoodWeather?: boolean;
   isActive: boolean;
+}
+
+export interface UpdateHabitRequest {
+  name?: string;
+  description?: string;
+  type?: string;
+  icon?: string;
+  color?: string;
+  scheduledTime?: string;
+  isWeatherDependent?: boolean;
+  requiresGoodWeather?: boolean;
+  isActive?: boolean;
+}
+
+export interface Habit extends CreateHabitRequest {
+  id: string;
+  currentStreak: number;
+  totalCompletions: number;
+  logs?: LogCompletion[];
+  createdAt: string; // tambahkan
+  updatedAt: string; // tambahkan
 }
 
 export interface LogCompletion {

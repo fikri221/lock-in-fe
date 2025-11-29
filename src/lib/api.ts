@@ -1,6 +1,6 @@
 import axios from "axios";
 import { tokenStore } from "./tokenStore";
-import { Habit, LogCompletion } from "@/types/habits";
+import { CreateHabitRequest, LogCompletion, UpdateHabitRequest } from "@/types/habits";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -60,15 +60,15 @@ export const habitsAPI = {
 
   getHabitById: (id: string) => api.get(`/habits/${id}`),
 
-  createHabit: (data: Habit) => api.post("/habits", data),
+  createHabit: (data: CreateHabitRequest) => api.post("/habits", data),
 
-  updateHabit: (id: string, data: Partial<Habit>) =>
+  updateHabit: (id: string, data: UpdateHabitRequest) =>
     api.put(`/habits/${id}`, data),
 
   deleteHabit: (id: string) => api.delete(`/habits/${id}`),
 
   logCompletion: (id: string, data: LogCompletion) =>
-    api.post(`/habits/${id}/log`, data),
+    api.post(`/habits/${id}/logs`, data),
 
   getHabitStats: (id: string, days: number) =>
     api.get(`/habits/${id}/stats`, { params: { days } }),

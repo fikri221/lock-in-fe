@@ -24,10 +24,11 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
-  isLoading: true,
+  isLoading: false,
   isAuthenticated: false,
 
   login: async (email: string, password: string) => {
+    set({ isLoading: true });
     try {
       const response = await authAPI.login({ email, password });
       const { user, token } = response.data;
@@ -52,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   register: async (name: string, email: string, password: string) => {
+    set({ isLoading: true });
     try {
       const response = await authAPI.register({ name, email, password });
       const { user, token } = response.data;
@@ -89,7 +91,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: false, isAuthenticated: false });
       return;
     }
-
+    
+    set({ isLoading: true });
     try {
       const response = await authAPI.getProfile();
 

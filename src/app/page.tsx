@@ -1,9 +1,8 @@
 import React from "react";
-import TaskManager from "./old_comps/TaskManager";
-import HabitTracker from "@/components/HabitTracker";
+import Dashboard from "./(dashboard)/page";
 
 const Home: React.FC = () => {
-  return <HabitTracker />;
+  return <Dashboard />;
 };
 
 export default Home;
