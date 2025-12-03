@@ -1,6 +1,10 @@
 import axios from "axios";
 import { tokenStore } from "./tokenStore";
-import { CreateHabitRequest, LogCompletion, UpdateHabitRequest } from "@/types/habits";
+import {
+  CreateHabitRequest,
+  LogCompletion,
+  UpdateHabitRequest,
+} from "@/types/habits";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 

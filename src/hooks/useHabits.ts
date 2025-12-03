@@ -18,7 +18,6 @@ export const useHabits = () => {
     try {
       setLoading(true);
       const response = await habitsAPI.getHabits({ active: true });
-
       setHabits(response.data.habits);
       setError(null);
     } catch (err: unknown) {
