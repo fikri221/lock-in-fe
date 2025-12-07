@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Target, LogOut } from "lucide-react";
+import { Plus, LogOut, LockKeyholeIcon } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useHabits } from "@/hooks/useHabits";
 import HabitCard from "@/components/habits/HabitCard";
@@ -21,7 +21,14 @@ export default function Dashboard() {
     isLoading: authLoading,
     logout,
   } = useAuthStore();
-  const { habits, loading, createHabit, completeHabit } = useHabits();
+  const {
+    habits,
+    loading,
+    createHabit,
+    completeHabit,
+    skipHabit,
+    deleteHabit,
+  } = useHabits();
 
   const [weather, setWeather] = useState<Weather | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -48,6 +55,22 @@ export default function Dashboard() {
       await completeHabit(habitId, { status: LogCompletionType.COMPLETED });
     } catch (error) {
       console.error("Error completing habit:", error);
+    }
+  };
+
+  const handleSkipHabit = async (habitId: string) => {
+    try {
+      await skipHabit(habitId);
+    } catch (error) {
+      console.error("Error skipping habit:", error);
+    }
+  };
+
+  const handleDeleteHabit = async (habitId: string) => {
+    try {
+      await deleteHabit(habitId);
+    } catch (error) {
+      console.error("Error deleting habit:", error);
     }
   };
 
@@ -92,7 +115,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                <Target className="w-6 h-6 text-white" />
+                <LockKeyholeIcon className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Lock In</h1>
@@ -157,7 +180,7 @@ export default function Dashboard() {
             </div>
           ) : habits.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-300">
-              <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <LockKeyholeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 No habits yet
               </h3>
@@ -179,6 +202,8 @@ export default function Dashboard() {
                   key={habit.id}
                   habit={habit}
                   onComplete={handleCompleteHabit}
+                  onSkip={handleSkipHabit}
+                  onDelete={handleDeleteHabit}
                   weather={weather}
                 />
               ))}

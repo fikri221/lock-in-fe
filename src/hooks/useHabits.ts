@@ -5,6 +5,7 @@ import {
   CreateHabitRequest,
   Habit,
   LogCompletion,
+  LogCompletionType,
   UpdateHabitRequest,
 } from "@/types/habits";
 import { toast } from "sonner";
@@ -144,6 +145,39 @@ export const useHabits = () => {
     }
   };
 
+  const skipHabit = async (id: string) => {
+    try {
+      const response = await habitsAPI.logCompletion(id, {
+        status: LogCompletionType.SKIPPED,
+      });
+      const newLog = response.data.habitLog;
+
+      setHabits((prev) =>
+        prev.map((h) => {
+          if (h.id === id) {
+            return {
+              ...h,
+              logs: [...(h.logs || []), newLog],
+            };
+          }
+          return h;
+        })
+      );
+
+      toast.info("Habit skipped for today");
+      return newLog;
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.error || "Failed to skip habit");
+      } else if (err instanceof Error) {
+        toast.error(err.message || "Failed to skip habit");
+      } else {
+        toast.error("Failed to skip habit");
+      }
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchHabits();
   }, [fetchHabits]);
@@ -157,5 +191,6 @@ export const useHabits = () => {
     updateHabit,
     deleteHabit,
     completeHabit,
+    skipHabit,
   };
 };

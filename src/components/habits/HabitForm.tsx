@@ -1,104 +1,104 @@
-import { Habit } from '@/types/habits'
-import { Suggestion } from '@/types/suggestions'
-import { X, Target, Sparkles } from 'lucide-react'
-import { useState } from 'react'
+import { Habit } from "@/types/habits";
+import { Suggestion } from "@/types/suggestions";
+import { X, Sparkles, LockKeyholeIcon } from "lucide-react";
+import { useState } from "react";
 
 interface HabitFormProps {
-  onClose: () => void
-  onSubmit: (habit: Habit) => void
+  onClose: () => void;
+  onSubmit: (habit: Habit) => void;
 }
 
 const HABIT_TYPES = [
-  { 
-    value: 'OUTDOOR', 
-    label: 'Outdoor', 
-    icon: '🏃',
-    color: '#10b981',
-    description: 'Exercise, sports, nature'
+  {
+    value: "OUTDOOR",
+    label: "Outdoor",
+    icon: "🏃",
+    color: "#10b981",
+    description: "Exercise, sports, nature",
   },
-  { 
-    value: 'WORK', 
-    label: 'Work', 
-    icon: '💻',
-    color: '#3b82f6',
-    description: 'Career, productivity'
+  {
+    value: "WORK",
+    label: "Work",
+    icon: "💻",
+    color: "#3b82f6",
+    description: "Career, productivity",
   },
-  { 
-    value: 'HEALTH', 
-    label: 'Health', 
-    icon: '❤️',
-    color: '#ef4444',
-    description: 'Wellness, diet, sleep'
+  {
+    value: "HEALTH",
+    label: "Health",
+    icon: "❤️",
+    color: "#ef4444",
+    description: "Wellness, diet, sleep",
   },
-  { 
-    value: 'LEARNING', 
-    label: 'Learning', 
-    icon: '📚',
-    color: '#8b5cf6',
-    description: 'Study, skills, reading'
+  {
+    value: "LEARNING",
+    label: "Learning",
+    icon: "📚",
+    color: "#8b5cf6",
+    description: "Study, skills, reading",
   },
-  { 
-    value: 'OTHER', 
-    label: 'Other', 
-    icon: '⭐',
-    color: '#6b7280',
-    description: 'Everything else'
+  {
+    value: "OTHER",
+    label: "Other",
+    icon: "⭐",
+    color: "#6b7280",
+    description: "Everything else",
   },
-]
+];
 
 const POPULAR_HABITS = [
-  { name: 'Morning Exercise', type: 'OUTDOOR', icon: '🏃', time: '06:00' },
-  { name: 'Meditation', type: 'HEALTH', icon: '🧘', time: '07:00' },
-  { name: 'Read Book', type: 'LEARNING', icon: '📚', time: '20:00' },
-  { name: 'Drink Water', type: 'HEALTH', icon: '💧', time: '09:00' },
-  { name: 'Code Practice', type: 'WORK', icon: '💻', time: '10:00' },
-  { name: 'Journal', type: 'OTHER', icon: '📝', time: '21:00' },
-]
+  { name: "Morning Exercise", type: "OUTDOOR", icon: "🏃", time: "06:00" },
+  { name: "Meditation", type: "HEALTH", icon: "🧘", time: "07:00" },
+  { name: "Read Book", type: "LEARNING", icon: "📚", time: "20:00" },
+  { name: "Drink Water", type: "HEALTH", icon: "💧", time: "09:00" },
+  { name: "Code Practice", type: "WORK", icon: "💻", time: "10:00" },
+  { name: "Journal", type: "OTHER", icon: "📝", time: "21:00" },
+];
 
 export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    type: 'OTHER',
-    icon: '⭐',
-    color: '#6b7280',
-    scheduledTime: '',
+    name: "",
+    description: "",
+    type: "OTHER",
+    icon: "⭐",
+    color: "#6b7280",
+    scheduledTime: "",
     isWeatherDependent: false,
     requiresGoodWeather: false,
-  } as Habit)
+  } as Habit);
 
-  const [showSuggestions, setShowSuggestions] = useState(true)
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name.trim()) return
-    onSubmit(formData)
-  }
+    e.preventDefault();
+    if (!formData.name.trim()) return;
+    onSubmit(formData);
+  };
 
   const handleTypeChange = (type: string) => {
-    const selected = HABIT_TYPES.find(t => t.value === type)
+    const selected = HABIT_TYPES.find((t) => t.value === type);
     if (selected) {
       setFormData({
         ...formData,
         type,
         icon: selected.icon,
         color: selected.color,
-      })
+      });
     }
-  }
+  };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
-    const selectedType = HABIT_TYPES.find(t => t.value === suggestion.type)
+    const selectedType = HABIT_TYPES.find((t) => t.value === suggestion.type);
     setFormData({
       ...formData,
       name: suggestion.name,
       type: suggestion.type,
       icon: suggestion.icon,
-      color: selectedType?.color || '#6b7280',
+      color: selectedType?.color || "#6b7280",
       scheduledTime: suggestion.time,
-    })
-    setShowSuggestions(false)
-  }
+    });
+    setShowSuggestions(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
@@ -107,11 +107,15 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
         <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Target className="w-6 h-6 text-white" />
+              <LockKeyholeIcon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Create New Habit</h2>
-              <p className="text-blue-100 text-sm">Build a better you, one habit at a time</p>
+              <h2 className="text-2xl font-bold text-white">
+                Create New Habit
+              </h2>
+              <p className="text-blue-100 text-sm">
+                Build a better you, one habit at a time
+              </p>
             </div>
           </div>
           <button
@@ -131,7 +135,9 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                 <Sparkles className="w-5 h-5 text-purple-600" />
                 <h3 className="font-semibold text-gray-900">Quick Start</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Choose from popular habits:</p>
+              <p className="text-sm text-gray-600 mb-4">
+                Choose from popular habits:
+              </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {POPULAR_HABITS.map((habit, index) => (
                   <button
@@ -141,7 +147,9 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                     className="flex items-center gap-2 px-4 py-3 bg-white hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-lg transition-all text-left"
                   >
                     <span className="text-2xl">{habit.icon}</span>
-                    <span className="text-sm font-medium text-gray-700">{habit.name}</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {habit.name}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -163,7 +171,9 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               placeholder="e.g., Morning Run, Read Book, Meditation"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               required
@@ -178,7 +188,9 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="What's this habit about? Add details or goals..."
               rows={3}
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
@@ -191,24 +203,32 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
               Category *
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {HABIT_TYPES.map(type => (
+              {HABIT_TYPES.map((type) => (
                 <button
                   key={type.value}
                   type="button"
                   onClick={() => handleTypeChange(type.value)}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     formData.type === type.value
-                      ? 'border-blue-500 bg-blue-50 shadow-md scale-105'
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                      ? "border-blue-500 bg-blue-50 shadow-md scale-105"
+                      : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
                   style={{
-                    borderColor: formData.type === type.value ? type.color : undefined,
-                    backgroundColor: formData.type === type.value ? type.color + '15' : undefined
+                    borderColor:
+                      formData.type === type.value ? type.color : undefined,
+                    backgroundColor:
+                      formData.type === type.value
+                        ? type.color + "15"
+                        : undefined,
                   }}
                 >
                   <div className="text-3xl mb-2">{type.icon}</div>
-                  <div className="text-sm font-semibold text-gray-900 mb-1">{type.label}</div>
-                  <div className="text-xs text-gray-500">{type.description}</div>
+                  <div className="text-sm font-semibold text-gray-900 mb-1">
+                    {type.label}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {type.description}
+                  </div>
                 </button>
               ))}
             </div>
@@ -223,31 +243,45 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
               <input
                 type="time"
                 value={formData.scheduledTime}
-                onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, scheduledTime: e.target.value })
+                }
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Set a reminder time for this habit</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Set a reminder time for this habit
+            </p>
           </div>
 
           {/* Weather Options */}
           <div className="space-y-3 bg-gray-50 rounded-xl p-4">
-            <h3 className="font-semibold text-gray-900 text-sm">Smart Features</h3>
-            
+            <h3 className="font-semibold text-gray-900 text-sm">
+              Smart Features
+            </h3>
+
             <label className="flex items-start gap-3 p-3 rounded-lg hover:bg-white border border-transparent hover:border-gray-200 cursor-pointer transition-all">
               <input
                 type="checkbox"
                 checked={formData.isWeatherDependent}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  isWeatherDependent: e.target.checked,
-                  requiresGoodWeather: e.target.checked ? formData.requiresGoodWeather : false
-                })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    isWeatherDependent: e.target.checked,
+                    requiresGoodWeather: e.target.checked
+                      ? formData.requiresGoodWeather
+                      : false,
+                  })
+                }
                 className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 mt-0.5"
               />
               <div>
-                <div className="font-medium text-gray-900">Weather Dependent</div>
-                <div className="text-sm text-gray-600">This habit is affected by weather conditions</div>
+                <div className="font-medium text-gray-900">
+                  Weather Dependent
+                </div>
+                <div className="text-sm text-gray-600">
+                  This habit is affected by weather conditions
+                </div>
               </div>
             </label>
 
@@ -256,12 +290,21 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                 <input
                   type="checkbox"
                   checked={formData.requiresGoodWeather}
-                  onChange={(e) => setFormData({ ...formData, requiresGoodWeather: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      requiresGoodWeather: e.target.checked,
+                    })
+                  }
                   className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 mt-0.5"
                 />
                 <div>
-                  <div className="font-medium text-gray-900">Requires Good Weather</div>
-                  <div className="text-sm text-gray-600">Get alerts when weather is not suitable</div>
+                  <div className="font-medium text-gray-900">
+                    Requires Good Weather
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Get alerts when weather is not suitable
+                  </div>
                 </div>
               </label>
             )}
@@ -287,5 +330,5 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
         </form>
       </div>
     </div>
-  )
+  );
 }

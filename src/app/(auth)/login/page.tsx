@@ -12,7 +12,7 @@ import {
   EyeOff,
   ArrowRight,
   Loader2,
-  LockKeyholeOpenIcon,
+  LockKeyholeIcon,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -55,12 +55,11 @@ export default function LoginPage() {
         );
       } else if (error instanceof Error) {
         toast.error(
-          error.message || "Login failed. Please check your credentials."
+          "Login failed. Invalid email or password. Please try again."
         );
       } else {
-        toast.error("Login failed. Please check your credentials.");
+        toast.error("Login failed. Please try again later.");
       }
-      throw error;
     } finally {
       setLoading(false);
     }
@@ -85,7 +84,7 @@ export default function LoginPage() {
         {/* Logo & Title */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-4">
-            <LockKeyholeOpenIcon className="w-9 h-9 text-white" />
+            <LockKeyholeIcon className="w-9 h-9 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome Back

@@ -8,19 +8,22 @@ import {
   AlertCircle,
   Trash2,
   MoreVertical,
+  SkipForward,
 } from "lucide-react";
 import { useState } from "react";
 
 interface HabitCardProps {
   habit: Habit;
   onComplete: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onSkip: (id: string) => void;
+  onDelete: (id: string) => void;
   weather: Weather | null;
 }
 
 export default function HabitCard({
   habit,
   onComplete,
+  onSkip,
   onDelete,
   weather,
 }: HabitCardProps) {
@@ -29,6 +32,9 @@ export default function HabitCard({
   // Check if completed today
   const isCompleted =
     habit.logs?.some((l) => l.status === LogCompletionType.COMPLETED) || false;
+
+  const isSkipped =
+    habit.logs?.some((l) => l.status === LogCompletionType.SKIPPED) || false;
 
   // Check if weather is bad for outdoor habits
   const isWeatherBad =
@@ -87,37 +93,47 @@ export default function HabitCard({
         </div>
 
         {/* More Menu */}
-        {onDelete && (
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
-            >
-              <MoreVertical className="w-4 h-4 text-gray-500" />
-            </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
+          >
+            <MoreVertical className="w-4 h-4 text-gray-500" />
+          </button>
 
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px] z-20">
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-20">
+                {!isCompleted && !isSkipped && (
                   <button
                     onClick={() => {
-                      onDelete(habit.id);
+                      onSkip(habit.id);
                       setShowMenu(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                   >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
+                    <SkipForward className="w-4 h-4" />
+                    Skip Today
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+                )}
+                <button
+                  onClick={() => {
+                    onDelete(habit.id);
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Description */}
@@ -128,7 +144,7 @@ export default function HabitCard({
       )}
 
       {/* Weather Warning */}
-      {isWeatherBad && !isCompleted && (
+      {isWeatherBad && !isCompleted && !isSkipped && (
         <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg mb-4">
           <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
           <span className="text-xs text-orange-700">
@@ -163,11 +179,13 @@ export default function HabitCard({
 
       {/* Action Button */}
       <button
-        onClick={() => !isCompleted && onComplete(habit.id)}
-        disabled={isCompleted}
+        onClick={() => !isCompleted && !isSkipped && onComplete(habit.id)}
+        disabled={isCompleted || isSkipped}
         className={`w-full py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
           isCompleted
             ? "bg-green-50 text-green-700 border-2 border-green-200 cursor-not-allowed"
+            : isSkipped
+            ? "bg-gray-50 text-gray-500 border-2 border-gray-200 cursor-not-allowed"
             : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
         }`}
       >
@@ -175,6 +193,11 @@ export default function HabitCard({
           <>
             <Check className="w-5 h-5" />
             <span>Completed Today! {getStreakEmoji(habit.currentStreak)}</span>
+          </>
+        ) : isSkipped ? (
+          <>
+            <SkipForward className="w-5 h-5" />
+            <span>Skipped Today</span>
           </>
         ) : (
           <>
@@ -184,10 +207,16 @@ export default function HabitCard({
         )}
       </button>
 
-      {/* Completed Badge */}
-      {isCompleted && (
-        <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-          ✓ Done
+      {/* Completed/Skipped Badge */}
+      {(isCompleted || isSkipped) && (
+        <div
+          className={`absolute top-4 right-14 text-xs font-bold px-2 py-1 rounded-full ${
+            isCompleted
+              ? "bg-green-500 text-white"
+              : "bg-gray-200 text-gray-600"
+          }`}
+        >
+          {isCompleted ? "✓ Done" : "⏭ Skipped"}
         </div>
       )}
     </div>

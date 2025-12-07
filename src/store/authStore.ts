@@ -1,5 +1,5 @@
 import { authAPI } from "@/lib/api";
-import { tokenStore } from "@/lib/tokenStore";
+
 import { ApiError } from "@/types/error";
 import { create } from "zustand";
 
@@ -12,7 +12,6 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -30,17 +29,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email: string, password: string) => {
     try {
       const response = await authAPI.login({ email, password });
-      const { user, token } = response.data.data;
-      tokenStore.set(token);
+      const { user } = response.data.data;
       localStorage.setItem("user", JSON.stringify(user));
 
       set({
         user,
-        token,
         isAuthenticated: true,
       });
     } catch (error: unknown) {
-      console.error("Login error:", error);
       const err = error as ApiError;
       const message =
         err?.response?.data?.error ?? err?.message ?? "Login failed";
@@ -53,14 +49,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (name: string, email: string, password: string) => {
     try {
       const response = await authAPI.register({ name, email, password });
-      const { user, token } = response.data;
+      const { user } = response.data;
 
-      tokenStore.set(token);
       localStorage.setItem("user", JSON.stringify(user));
 
       set({
         user,
-        token,
         isAuthenticated: true,
       });
     } catch (error: unknown) {
@@ -74,36 +68,37 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  logout: () => {
-    tokenStore.clear();
+  logout: async () => {
+    await authAPI.logout();
     localStorage.removeItem("user");
-    set({ user: null, token: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false });
   },
 
   checkAuth: async () => {
-    const token = tokenStore.get();
-    const user = localStorage.getItem("user");
-
-    if (!token || !user) {
-      set({ isLoading: false, isAuthenticated: false });
-      return;
-    }
-
     try {
       const response = await authAPI.getProfile();
+      // content of response.data is { success: true, data: { user: ... } }
+      const user = response.data?.data?.user;
 
-      set({
-        user: response.data?.user,
-        token,
-        isAuthenticated: true,
-      });
-    } catch (error: unknown) {
-      console.error("Check auth error:", error);
-      tokenStore.clear();
+      if (user) {
+        console.log("User found: ", user);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        set({
+          user,
+          isAuthenticated: true,
+        });
+      } else {
+        set({
+          user: null,
+          isAuthenticated: false,
+        });
+      }
+    } catch {
+      // Silently fail for checkAuth as it runs on every load
       localStorage.removeItem("user");
       set({
         user: null,
-        token: null,
         isAuthenticated: false,
       });
     } finally {

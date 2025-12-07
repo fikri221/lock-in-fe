@@ -1,5 +1,5 @@
 import axios from "axios";
-import { tokenStore } from "./tokenStore";
+
 import {
   CreateHabitRequest,
   LogCompletion,
@@ -17,13 +17,9 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
+// Request interceptor (optional: for logging or other headers)
 api.interceptors.request.use(
   (config) => {
-    const token = tokenStore.get();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     return config;
   },
   (error) => {
@@ -39,9 +35,12 @@ api.interceptors.response.use(
   (error) => {
     // Handle unauthorized errors
     if (error.response && error.response.status === 401) {
-      tokenStore.clear();
-      // Optionally, redirect to login page or show a message
-      window.location.href = "/login";
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/login")
+      ) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
