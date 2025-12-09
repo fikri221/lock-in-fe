@@ -1,6 +1,7 @@
 import { Habit } from "@/types/habits";
 import { Suggestion } from "@/types/suggestions";
 import { X, Sparkles, LockKeyholeIcon } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
 
 interface HabitFormProps {
@@ -68,6 +69,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
   } as Habit);
 
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,7 +106,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
       <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
+        <div className="sticky top-0 z-20 bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-5 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
               <LockKeyholeIcon className="w-6 h-6 text-white" />
@@ -163,22 +165,59 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             </div>
           )}
 
-          {/* Habit Name */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Habit Name *
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="e.g., Morning Run, Read Book, Meditation"
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              required
-              autoFocus
-            />
+          {/* Icon and Name Row */}
+          <div className="flex gap-4">
+            {/* Icon */}
+            <div className="w-32 relative z-10">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Icon
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="w-full h-[50px] border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all flex items-center justify-center text-2xl hover:bg-gray-50 bg-white"
+              >
+                {formData.icon || "⭐"}
+              </button>
+
+              {showEmojiPicker && (
+                <div className="absolute top-full left-0 mt-2 z-30">
+                  <div
+                    className="absolute inset-0"
+                    onClick={() => setShowEmojiPicker(false)}
+                  />
+
+                  <div className="relative shadow-xl rounded-xl bg-white">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setFormData({ ...formData, icon: emojiData.emoji });
+                        setShowEmojiPicker(false);
+                      }}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Habit Name */}
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Habit Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="e.g., Morning Run, Read Book, Meditation"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                required
+                autoFocus
+              />
+            </div>
           </div>
 
           {/* Description */}
