@@ -1,6 +1,8 @@
 export enum LogCompletionType {
+  PENDING = "PENDING",
   COMPLETED = "COMPLETED",
   SKIPPED = "SKIPPED",
+  CANCELLED = "CANCELLED",
   FAILED = "FAILED",
 }
 

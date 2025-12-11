@@ -69,6 +69,7 @@ export const habitsAPI = {
     api.put(`/habits/${id}`, data),
 
   deleteHabit: (id: string) => api.delete(`/habits/${id}`),
+  cancelHabit: (id: string) => api.post(`/habits/${id}/cancel`),
 
   logCompletion: (id: string, data: LogCompletion) =>
     api.post(`/habits/${id}/logs`, data),

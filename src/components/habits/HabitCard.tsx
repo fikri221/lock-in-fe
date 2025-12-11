@@ -9,6 +9,7 @@ import {
   Trash2,
   MoreVertical,
   SkipForward,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -17,6 +18,7 @@ interface HabitCardProps {
   onComplete: (id: string) => void;
   onSkip: (id: string) => void;
   onDelete: (id: string) => void;
+  onCancel: (id: string) => void;
   weather: Weather | null;
 }
 
@@ -25,6 +27,7 @@ export default function HabitCard({
   onComplete,
   onSkip,
   onDelete,
+  onCancel,
   weather,
 }: HabitCardProps) {
   const [showMenu, setShowMenu] = useState(false);
@@ -178,34 +181,70 @@ export default function HabitCard({
       </div>
 
       {/* Action Button */}
-      <button
-        onClick={() => !isCompleted && !isSkipped && onComplete(habit.id)}
-        disabled={isCompleted || isSkipped}
-        className={`w-full py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-          isCompleted
-            ? "bg-green-50 text-green-700 border-2 border-green-200 cursor-not-allowed"
-            : isSkipped
-            ? "bg-gray-50 text-gray-500 border-2 border-gray-200 cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
-        }`}
-      >
-        {isCompleted ? (
-          <>
-            <Check className="w-5 h-5" />
-            <span>Completed Today! {getStreakEmoji(habit.currentStreak)}</span>
-          </>
-        ) : isSkipped ? (
-          <>
+      <div className="relative">
+        {/* ===== COMPLETED STATE ===== */}
+        {isCompleted && (
+          <button
+            onClick={() => onCancel(habit.id)}
+            className="
+              group/button w-full py-3.5 rounded-xl font-semibold
+              flex items-center justify-center gap-2
+              border-2 transition-all
+              bg-green-50 text-green-700 border-green-200
+              hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300
+            "
+          >
+            {/* Default text */}
+            <span className="flex items-center gap-2 group-hover/button:hidden">
+              <Check className="w-5 h-5" />
+              Completed Today! {getStreakEmoji(habit.currentStreak)}
+            </span>
+
+            {/* Hover text */}
+            <span className="hidden group-hover/button:flex items-center gap-2">
+              <X className="w-5 h-5" />
+              Cancel Completion
+            </span>
+          </button>
+        )}
+
+        {/* ===== SKIPPED STATE ===== */}
+        {!isCompleted && isSkipped && (
+          <button
+            disabled
+            className="
+            w-full py-3.5 rounded-xl font-semibold
+            flex items-center justify-center gap-2
+            bg-gray-50 text-gray-500
+            border-2 border-gray-200
+            cursor-not-allowed
+          "
+          >
             <SkipForward className="w-5 h-5" />
             <span>Skipped Today</span>
-          </>
-        ) : (
-          <>
+          </button>
+        )}
+
+        {/* ===== DEFAULT STATE ===== */}
+        {!isCompleted && !isSkipped && (
+          <button
+            onClick={() => onComplete(habit.id)}
+            className="
+            w-full py-3.5 rounded-xl font-semibold
+            flex items-center justify-center gap-2
+            bg-gradient-to-r from-blue-500 to-indigo-600
+            text-white
+            transition-all
+            hover:from-blue-600 hover:to-indigo-700
+            shadow-md hover:shadow-lg
+            transform hover:scale-[1.02] active:scale-[0.98]
+          "
+          >
             <Check className="w-5 h-5" />
             <span>Mark as Complete</span>
-          </>
+          </button>
         )}
-      </button>
+      </div>
 
       {/* Completed/Skipped Badge */}
       {(isCompleted || isSkipped) && (

@@ -101,20 +101,6 @@ export const useHabits = () => {
     try {
       const response = await habitsAPI.logCompletion(id, logCompletion);
       const newLog = response.data.habitLog;
-      console.log("Log completion response:", response);
-
-      // setHabits((prev) =>
-      //   prev.map((h) => {
-      //     if (h.id === id) {
-      //       return {
-      //         ...h,
-      //         ...response.data.habitLog,
-      //         logs: response.data.habitLog.logs ?? h.logs ?? [],
-      //       };
-      //     }
-      //     return h;
-      //   })
-      // );
 
       setHabits((prev) =>
         prev.map((h) => {
@@ -140,6 +126,37 @@ export const useHabits = () => {
         toast.error(err.message || "Failed to log habit");
       } else {
         toast.error("Failed to log habit");
+      }
+      throw err;
+    }
+  };
+
+  const cancelHabit = async (id: string) => {
+    try {
+      const response = await habitsAPI.cancelHabit(id);
+      const newLog = response.data.habitLog;
+
+      setHabits((prev) =>
+        prev.map((h) => {
+          if (h.id === id) {
+            return {
+              ...h,
+              logs: [...(h.logs || []), newLog],
+            };
+          }
+          return h;
+        })
+      );
+
+      toast.info("Habit cancelled for today");
+      return newLog;
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.error || "Failed to cancel habit");
+      } else if (err instanceof Error) {
+        toast.error(err.message || "Failed to cancel habit");
+      } else {
+        toast.error("Failed to cancel habit");
       }
       throw err;
     }
@@ -190,6 +207,7 @@ export const useHabits = () => {
     createHabit,
     updateHabit,
     deleteHabit,
+    cancelHabit,
     completeHabit,
     skipHabit,
   };

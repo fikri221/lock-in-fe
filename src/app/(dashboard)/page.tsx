@@ -28,6 +28,7 @@ export default function Dashboard() {
     completeHabit,
     skipHabit,
     deleteHabit,
+    cancelHabit,
   } = useHabits();
 
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -63,6 +64,14 @@ export default function Dashboard() {
       await skipHabit(habitId);
     } catch (error) {
       console.error("Error skipping habit:", error);
+    }
+  };
+
+  const handleCancelHabit = async (habitId: string) => {
+    try {
+      await cancelHabit(habitId);
+    } catch (error) {
+      console.error("Error cancelling habit:", error);
     }
   };
 
@@ -204,6 +213,7 @@ export default function Dashboard() {
                   onComplete={handleCompleteHabit}
                   onSkip={handleSkipHabit}
                   onDelete={handleDeleteHabit}
+                  onCancel={handleCancelHabit}
                   weather={weather}
                 />
               ))}
