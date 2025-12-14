@@ -10,8 +10,9 @@ import HabitForm from "@/components/habits/HabitForm";
 import ContextCards from "@/components/dashboard/ContextCards";
 import SmartSuggestions from "@/components/dashboard/SmartSuggestions";
 import WeeklyChart from "@/components/dashboard/WeeklyChart";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { Weather } from "@/types/weather";
-import { Habit, LogCompletionType } from "@/types/habits";
+import { LogCompletionType, CreateHabitRequest } from "@/types/habits";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -83,10 +84,10 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddHabit = async (habitData: Habit) => {
+  const handleAddHabit = async (habitData: CreateHabitRequest) => {
+    setIsFormOpen(false);
     try {
       await createHabit(habitData);
-      setIsFormOpen(false);
     } catch (error) {
       console.error("Error creating habit:", error);
     }
@@ -98,15 +99,13 @@ export default function Dashboard() {
   };
 
   // Show loading state
-  if (authLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+  if (authLoading || (loading && habits.length === 0)) {
+    return <DashboardSkeleton />;
+  }
+
+  // Redirect if not authenticated (after loading)
+  if (!isAuthenticated) {
+    return null; // or return login page redirect component if handled differently
   }
 
   const completedToday = habits.filter((h) =>
@@ -178,16 +177,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl p-6 animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : habits.length === 0 ? (
+          {habits.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-300">
               <LockKeyholeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">

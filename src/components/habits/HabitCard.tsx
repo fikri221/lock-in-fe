@@ -211,17 +211,27 @@ export default function HabitCard({
         {/* ===== SKIPPED STATE ===== */}
         {!isCompleted && isSkipped && (
           <button
-            disabled
+            onClick={() => onCancel(habit.id)}
             className="
-            w-full py-3.5 rounded-xl font-semibold
-            flex items-center justify-center gap-2
-            bg-gray-50 text-gray-500
-            border-2 border-gray-200
-            cursor-not-allowed
-          "
+              group/button w-full py-3.5 rounded-xl font-semibold
+              flex items-center justify-center gap-2
+              border-2 transition-all
+              bg-gray-50 text-gray-500
+              border-gray-200
+              hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300
+            "
           >
-            <SkipForward className="w-5 h-5" />
-            <span>Skipped Today</span>
+            {/* Default text */}
+            <span className="flex items-center gap-2 group-hover/button:hidden">
+              <SkipForward className="w-5 h-5" />
+              <span>Skipped Today</span>
+            </span>
+
+            {/* Hover text */}
+            <span className="hidden group-hover/button:flex items-center gap-2">
+              <X className="w-5 h-5" />
+              Cancel Completion
+            </span>
           </button>
         )}
 

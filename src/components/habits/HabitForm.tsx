@@ -1,12 +1,11 @@
-import { Habit } from "@/types/habits";
-import { Suggestion } from "@/types/suggestions";
+import { CreateHabitRequest } from "@/types/habits";
 import { X, Sparkles, LockKeyholeIcon } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
 
 interface HabitFormProps {
   onClose: () => void;
-  onSubmit: (habit: Habit) => void;
+  onSubmit: (habit: CreateHabitRequest) => void;
 }
 
 const HABIT_TYPES = [
@@ -57,7 +56,7 @@ const POPULAR_HABITS = [
 ];
 
 export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CreateHabitRequest>({
     name: "",
     description: "",
     type: "OTHER",
@@ -66,7 +65,8 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
     scheduledTime: "",
     isWeatherDependent: false,
     requiresGoodWeather: false,
-  } as Habit);
+    isActive: true,
+  });
 
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -89,7 +89,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
     }
   };
 
-  const handleSuggestionClick = (suggestion: Suggestion) => {
+  const handleSuggestionClick = (suggestion: (typeof POPULAR_HABITS)[0]) => {
     const selectedType = HABIT_TYPES.find((t) => t.value === suggestion.type);
     setFormData({
       ...formData,
