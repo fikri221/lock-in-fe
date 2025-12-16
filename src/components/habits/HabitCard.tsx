@@ -11,6 +11,7 @@ import {
   SkipForward,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface HabitCardProps {
@@ -30,6 +31,7 @@ export default function HabitCard({
   onCancel,
   weather,
 }: HabitCardProps) {
+  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
 
   // Check if completed today
@@ -54,8 +56,19 @@ export default function HabitCard({
     return "✨";
   };
 
+  // Navigate to detail page when card is clicked
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or menu
+    const target = e.target as HTMLElement;
+    if (target.closest("button") || target.closest(".menu-trigger")) {
+      return;
+    }
+    router.push(`/habits/${habit.id}`);
+  };
+
   return (
     <div
+      onClick={handleCardClick}
       className="bg-white rounded-xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative overflow-hidden group"
       style={{
         borderTopColor: habit.color,

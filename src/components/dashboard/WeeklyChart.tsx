@@ -1,5 +1,7 @@
-// src/components/dashboard/WeeklyChart.tsx
+"use client";
+
 import { Habit } from "@/types/habits";
+import { useEffect, useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -15,21 +17,40 @@ interface WeeklyChartProps {
 }
 
 export default function WeeklyChart({ habits }: WeeklyChartProps) {
-  // Generate last 7 days data
-  const data = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
+  const [mounted, setMounted] = useState(false);
 
-    // Deterministic mock data to avoid hydration mismatch
-    const params = [0.7, 0.4, 0.9, 0.6, 0.8, 0.5, 0.75];
-    const completedCount = Math.floor((params[i] || 0.5) * habits.length);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    return {
-      name: date.toLocaleDateString("en-US", { weekday: "short" }),
-      completed: completedCount, // Deterministic Mock data
-      total: habits.length,
-    };
-  });
+  // Memoize data to prevent re-calculation and potential infinite loops
+  const data = useMemo(() => {
+    // Return empty array during server-side rendering or before mount
+    if (!mounted) return [];
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+
+      // Deterministic mock data to avoid hydration mismatch
+      const params = [0.7, 0.4, 0.9, 0.6, 0.8, 0.5, 0.75];
+      const completedCount = Math.floor((params[i] || 0.5) * habits.length);
+
+      return {
+        name: date.toLocaleDateString("en-US", { weekday: "short" }),
+        completed: completedCount, // Deterministic Mock data
+        total: habits.length,
+      };
+    });
+  }, [habits.length, mounted]);
+
+  if (!mounted) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
+        <div className="animate-pulse bg-gray-200 h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -79,22 +100,26 @@ export default function WeeklyChart({ habits }: WeeklyChartProps) {
         <div>
           <p className="text-sm text-gray-600">Average completion</p>
           <p className="text-2xl font-bold text-gray-900">
-            {Math.round(
-              (data.reduce((acc, d) => acc + d.completed, 0) /
-                data.length /
-                habits.length) *
-                100
-            )}
+            {habits.length > 0 && data.length > 0
+              ? Math.round(
+                  (data.reduce((acc, d) => acc + d.completed, 0) /
+                    data.length /
+                    habits.length) *
+                    100
+                )
+              : 0}
             %
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600">Best day</p>
           <p className="text-2xl font-bold text-gray-900">
-            {
-              data.reduce((max, d) => (d.completed > max.completed ? d : max))
-                .name
-            }
+            {data.length > 0
+              ? data.reduce(
+                  (max, d) => (d.completed > max.completed ? d : max),
+                  data[0]
+                ).name
+              : "-"}
           </p>
         </div>
         <div>

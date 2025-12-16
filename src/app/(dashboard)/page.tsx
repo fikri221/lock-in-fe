@@ -9,7 +9,6 @@ import HabitCard from "@/components/habits/HabitCard";
 import HabitForm from "@/components/habits/HabitForm";
 import ContextCards from "@/components/dashboard/ContextCards";
 import SmartSuggestions from "@/components/dashboard/SmartSuggestions";
-import WeeklyChart from "@/components/dashboard/WeeklyChart";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import { Weather } from "@/types/weather";
 import { LogCompletionType, CreateHabitRequest } from "@/types/habits";
@@ -210,12 +209,6 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-
-        {habits.length > 0 && (
-          <div className="mt-8">
-            <WeeklyChart habits={habits} />
-          </div>
-        )}
       </main>
 
       {isFormOpen && (
