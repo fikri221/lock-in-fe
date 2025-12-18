@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { format, subDays, startOfDay, getDay } from "date-fns";
 
 interface HabitHeatmapProps {
   habitId: string;
@@ -10,15 +11,51 @@ export default function HabitHeatmap({ habitId }: HabitHeatmapProps) {
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
 
-  // Fetch data from API
-  const { data, isLoading, error } = useHabitData(habitId);
+  // Generate 90 days of data
+  const data = useMemo(() => {
+    const data: { [key: string]: number } = {};
+    const today = startOfDay(new Date());
+
+    for (let i = 89; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateStr = format(date, "yyyy-MM-dd");
+      // Mock: 70% completion rate
+      data[dateStr] = Math.random() > 0.3 ? 1 : 0;
+    }
+
+    return data;
+  }, []);
+
+  const today = startOfDay(new Date());
+
+  // Get intensity color
+  const getColor = (value: number) => {
+    if (value === 0) return "bg-gray-200";
+    return "bg-green-500";
+  };
+
+  // Generate grid (7 rows for days of week, columns for weeks)
+  const grid = useMemo(() => {
+    const grid: string[][] = Array(7)
+      .fill(null)
+      .map(() => []);
+
+    for (let i = 89; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dayOfWeek = getDay(date);
+      const dateStr = format(date, "yyyy-MM-dd");
+      grid[dayOfWeek].push(dateStr);
+    }
+
+    return grid;
+  }, [today]);
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-      <h2 className="text-xl font-bold text-gray-900 mb-1">Habit Heatmap</h2>
-      <p className="text-gray-600">
-        Visualize your habit completions over the past 90 days
-      </p>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">
+        Activity Calendar (Last 90 Days)
+      </h2>
 
       <div className="flex gap-2">
         {/* Day labels */}

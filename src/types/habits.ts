@@ -45,6 +45,7 @@ export interface UpdateHabitRequest {
 export interface Habit extends CreateHabitRequest {
   id: string;
   currentStreak: number;
+  longestStreak: number;
   totalCompletions: number;
   logs?: LogCompletion[];
   createdAt: string; // tambahkan

@@ -4,12 +4,11 @@ import {
   Check,
   Clock,
   Flame,
-  Calendar,
   AlertCircle,
   Trash2,
   MoreVertical,
   SkipForward,
-  X,
+  SkipBack,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -47,15 +46,6 @@ export default function HabitCard({
     weather &&
     (weather.condition === "Rain" || weather.temp > 35 || weather.temp < 10);
 
-  // Get streak emoji
-  const getStreakEmoji = (streak: number) => {
-    if (streak >= 30) return "🔥🔥🔥";
-    if (streak >= 14) return "🔥🔥";
-    if (streak >= 7) return "🔥";
-    if (streak >= 3) return "⭐";
-    return "✨";
-  };
-
   // Navigate to detail page when card is clicked
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on buttons or menu
@@ -66,219 +56,212 @@ export default function HabitCard({
     router.push(`/habits/${habit.id}`);
   };
 
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isCompleted) {
+      onCancel(habit.id);
+    } else {
+      onComplete(habit.id);
+    }
+  };
+
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white rounded-xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 relative overflow-hidden group"
-      style={{
-        borderTopColor: habit.color,
-        borderTopWidth: "4px",
-      }}
+      className={`relative bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 group overflow-visible ${
+        isCompleted ? "bg-green-50/30" : ""
+      }`}
     >
-      {/* Background Pattern */}
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-5 transform translate-x-8 -translate-y-8 transition-transform group-hover:scale-110">
-        <div className="text-8xl">{habit.icon}</div>
-      </div>
+      <div className="flex items-center gap-4">
+        {/* Left: Circular Progress & Icon */}
+        <div className="relative flex-shrink-0">
+          {/* Progress Ring */}
+          <div className="relative w-16 h-16">
+            <svg className="w-full h-full transform -rotate-90">
+              {/* Background Ring */}
+              <circle
+                cx="32"
+                cy="32"
+                r="28"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+                className={isCompleted ? "text-green-200" : "text-gray-100"}
+              />
+              {/* Progress Ring */}
+              <circle
+                cx="32"
+                cy="32"
+                r="28"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+                strokeLinecap="round"
+                className={`transition-all duration-500 ease-out ${
+                  isCompleted ? "text-green-500" : "text-transparent"
+                }`}
+                strokeDasharray={`${2 * Math.PI * 28}`}
+                strokeDashoffset={isCompleted ? "0" : `${2 * Math.PI * 28}`}
+              />
+            </svg>
 
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4 relative">
-        <div className="flex items-center gap-3 flex-1">
-          {/* Icon */}
-          <div
-            className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl shadow-md transition-transform group-hover:scale-110"
-            style={{
-              backgroundColor: habit.color + "25",
-              border: `2px solid ${habit.color}40`,
-            }}
-          >
-            {habit.icon}
+            {/* Icon Center */}
+            <div
+              className={`absolute inset-0 m-auto w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all duration-300 ${
+                isCompleted
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-50 text-gray-700"
+              }`}
+              style={
+                !isCompleted
+                  ? { backgroundColor: habit.color + "20", color: habit.color }
+                  : {}
+              }
+            >
+              {habit.icon}
+            </div>
           </div>
+        </div>
 
-          {/* Title & Time */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-gray-900 text-lg truncate">
-              {habit.name}
-            </h3>
+        {/* Middle: Info */}
+        <div className="flex-1 min-w-0">
+          <h3
+            className={`font-bold text-gray-900 text-lg truncate ${
+              isCompleted ? "line-through text-gray-400" : ""
+            }`}
+          >
+            {habit.name}
+          </h3>
+          <div className="flex items-center gap-2 mt-1">
             {habit.scheduledTime && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
-                <Clock className="w-4 h-4" />
-                <span>{habit.scheduledTime}</span>
-              </div>
+              <span className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                <Clock className="w-3 h-3" />
+                {habit.scheduledTime}
+              </span>
+            )}
+            {isSkipped && (
+              <span className="text-xs font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">
+                Skipped
+              </span>
             )}
           </div>
         </div>
 
-        {/* More Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors"
-          >
-            <MoreVertical className="w-4 h-4 text-gray-500" />
-          </button>
-
-          {showMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowMenu(false)}
+        {/* Right: Streak & Action */}
+        <div className="flex items-center gap-4">
+          {/* Streak */}
+          <div className="flex flex-col items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Streak
+            </span>
+            <div className="flex items-center gap-1">
+              <Flame
+                className={`w-4 h-4 ${
+                  habit.currentStreak > 0
+                    ? "text-orange-500 fill-orange-500"
+                    : "text-gray-300"
+                }`}
               />
-              <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-20">
-                {!isCompleted && !isSkipped && (
-                  <button
-                    onClick={() => {
-                      onSkip(habit.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                    Skip Today
-                  </button>
-                )}
+              <span
+                className={`font-bold ${
+                  habit.currentStreak > 0 ? "text-gray-900" : "text-gray-400"
+                }`}
+              >
+                {habit.currentStreak}
+              </span>
+            </div>
+          </div>
+
+          {/* New Checkbox/Toggle Button */}
+          <button
+            onClick={handleToggle}
+            className={`
+              w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
+              ${
+                isCompleted
+                  ? "bg-green-500 text-white shadow-green-200 shadow-lg scale-105"
+                  : "bg-gray-100 text-gray-300 hover:bg-gray-200 hover:scale-105"
+              }
+            `}
+          >
+            {isCompleted ? (
+              <Check className="w-6 h-6 stroke-[3]" />
+            ) : (
+              <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Menu Button (Absolute Top Right) */}
+      <div className="absolute top-2 right-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+          }}
+          className="p-1 rounded-full hover:bg-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+
+        {showMenu && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(false);
+              }}
+            />
+            <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[140px] z-20">
+              {!isCompleted && !isSkipped && (
                 <button
-                  onClick={() => {
-                    onDelete(habit.id);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSkip(habit.id);
                     setShowMenu(false);
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
+                  <SkipForward className="w-4 h-4" />
+                  Skip Today
                 </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Description */}
-      {habit.description && (
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {habit.description}
-        </p>
-      )}
-
-      {/* Weather Warning */}
-      {isWeatherBad && !isCompleted && !isSkipped && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg mb-4">
-          <AlertCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-          <span className="text-xs text-orange-700">
-            Weather not ideal today ({weather?.condition}, {weather?.temp}°C)
-          </span>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
-            <Flame className="w-5 h-5 text-orange-500" />
-            <span className="text-lg font-bold text-gray-900">
-              {habit.currentStreak}
-            </span>
-          </div>
-          <span className="text-sm text-gray-600">
-            day{habit.currentStreak !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200" />
-
-        <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-blue-500" />
-          <span className="text-sm font-medium text-gray-700">
-            {habit.totalCompletions} total
-          </span>
-        </div>
-      </div>
-
-      {/* Action Button */}
-      <div className="relative">
-        {/* ===== COMPLETED STATE ===== */}
-        {isCompleted && (
-          <button
-            onClick={() => onCancel(habit.id)}
-            className="
-              group/button w-full py-3.5 rounded-xl font-semibold
-              flex items-center justify-center gap-2
-              border-2 transition-all
-              bg-green-50 text-green-700 border-green-200
-              hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300
-            "
-          >
-            {/* Default text */}
-            <span className="flex items-center gap-2 group-hover/button:hidden">
-              <Check className="w-5 h-5" />
-              Completed Today! {getStreakEmoji(habit.currentStreak)}
-            </span>
-
-            {/* Hover text */}
-            <span className="hidden group-hover/button:flex items-center gap-2">
-              <X className="w-5 h-5" />
-              Cancel Completion
-            </span>
-          </button>
-        )}
-
-        {/* ===== SKIPPED STATE ===== */}
-        {!isCompleted && isSkipped && (
-          <button
-            onClick={() => onCancel(habit.id)}
-            className="
-              group/button w-full py-3.5 rounded-xl font-semibold
-              flex items-center justify-center gap-2
-              border-2 transition-all
-              bg-gray-50 text-gray-500
-              border-gray-200
-              hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300
-            "
-          >
-            {/* Default text */}
-            <span className="flex items-center gap-2 group-hover/button:hidden">
-              <SkipForward className="w-5 h-5" />
-              <span>Skipped Today</span>
-            </span>
-
-            {/* Hover text */}
-            <span className="hidden group-hover/button:flex items-center gap-2">
-              <X className="w-5 h-5" />
-              Cancel Completion
-            </span>
-          </button>
-        )}
-
-        {/* ===== DEFAULT STATE ===== */}
-        {!isCompleted && !isSkipped && (
-          <button
-            onClick={() => onComplete(habit.id)}
-            className="
-            w-full py-3.5 rounded-xl font-semibold
-            flex items-center justify-center gap-2
-            bg-gradient-to-r from-blue-500 to-indigo-600
-            text-white
-            transition-all
-            hover:from-blue-600 hover:to-indigo-700
-            shadow-md hover:shadow-lg
-            transform hover:scale-[1.02] active:scale-[0.98]
-          "
-          >
-            <Check className="w-5 h-5" />
-            <span>Mark as Complete</span>
-          </button>
+              )}
+              {isSkipped && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCancel(habit.id);
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <SkipBack className="w-4 h-4" />
+                  Cancel Skip
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(habit.id);
+                  setShowMenu(false);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Completed/Skipped Badge */}
-      {(isCompleted || isSkipped) && (
-        <div
-          className={`absolute top-4 right-14 text-xs font-bold px-2 py-1 rounded-full ${
-            isCompleted
-              ? "bg-green-500 text-white"
-              : "bg-gray-200 text-gray-600"
-          }`}
-        >
-          {isCompleted ? "✓ Done" : "⏭ Skipped"}
+      {/* Description / Weather Warning - Optional Footer */}
+      {isWeatherBad && !isCompleted && (
+        <div className="mt-3 text-xs text-orange-600 bg-orange-50 px-3 py-2 rounded-lg flex items-center gap-2">
+          <AlertCircle className="w-3 h-3" />
+          <span>Weather warning: {weather?.condition}</span>
         </div>
       )}
     </div>
