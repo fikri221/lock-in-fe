@@ -133,11 +133,17 @@ export default function HabitCard({
             {habit.name}
           </h3>
           <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs font-medium text-gray-500">
+              {habit.type}
+            </span>
             {habit.scheduledTime && (
-              <span className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                <Clock className="w-3 h-3" />
-                {habit.scheduledTime}
-              </span>
+              <>
+                <span className="text-slate-300">•</span>
+                <span className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  <Clock className="w-3 h-3" />
+                  {habit.scheduledTime}
+                </span>
+              </>
             )}
             {isSkipped && (
               <span className="text-xs font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">
@@ -176,18 +182,18 @@ export default function HabitCard({
           <button
             onClick={handleToggle}
             className={`
-              w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
+              rounded-full flex items-center justify-center transition-all duration-300
               ${
                 isCompleted
-                  ? "bg-green-500 text-white shadow-green-200 shadow-lg scale-105"
+                  ? "bg-green-500 text-white shadow-lg scale-105"
                   : "bg-gray-100 text-gray-300 hover:bg-gray-200 hover:scale-105"
               }
             `}
           >
             {isCompleted ? (
-              <Check className="w-6 h-6 stroke-[3]" />
+              <Check className="w-8 h-8" size={20} />
             ) : (
-              <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+              <div className="w-8 h-8 rounded-full border-2 border-gray-300" />
             )}
           </button>
         </div>

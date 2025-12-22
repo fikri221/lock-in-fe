@@ -20,12 +20,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useHabits } from "@/hooks/useHabits";
-import HabitChart from "@/components/habits/HabitChart";
-import HabitHeatmap from "@/components/habits/HabitHeatmap";
+// import HabitChart from "@/components/habits/HabitChart";
+// import HabitHeatmap from "@/components/habits/HabitHeatmap";
 import GoalProgress from "@/components/habits/GoalProgress";
 import RecentActivity from "@/components/habits/RecentActivity";
+import { LogCompletion, LogCompletionType } from "@/types/habits";
 
-type TimeRange = "7" | "30" | "90" | "all";
+// type TimeRange = "7" | "30" | "90" | "all";
 
 export default function HabitDetailPage() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function HabitDetailPage() {
     [habits, habitId]
   );
 
-  const [timeRange, setTimeRange] = useState<TimeRange>("7");
+  // const [timeRange, setTimeRange] = useState<TimeRange>("7");
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -116,7 +117,9 @@ export default function HabitDetailPage() {
     toast.info("Export feature coming soon!");
   };
 
-  const isCompleted = habit?.logs?.some((l: any) => l.status === "completed");
+  const isCompleted = habit?.logs?.some(
+    (l: LogCompletion) => l.status === LogCompletionType.COMPLETED
+  );
 
   if (loading || !habit) {
     return (
@@ -320,7 +323,7 @@ export default function HabitDetailPage() {
           <StatCard
             icon={<TrendingUp className="w-6 h-6 text-green-500" />}
             label="30-Day Rate"
-            value="80"
+            value={80}
             suffix="%"
           />
           <StatCard
@@ -393,7 +396,17 @@ export default function HabitDetailPage() {
 }
 
 // Stat Card Component
-function StatCard({ icon, label, value, suffix }: any) {
+function StatCard({
+  icon,
+  label,
+  value,
+  suffix,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+  suffix: string;
+}) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">

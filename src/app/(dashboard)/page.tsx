@@ -141,14 +141,6 @@ export default function Dashboard() {
               </div>
 
               <button
-                onClick={() => setIsFormOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="hidden sm:inline">Add Habit</span>
-              </button>
-
-              <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Logout"
@@ -174,6 +166,12 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold text-gray-900">Your Habits</h2>
               <p className="text-gray-600 mt-1">Track your daily progress</p>
             </div>
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
           </div>
 
           {habits.length === 0 ? (
@@ -194,7 +192,7 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid gap-6">
               {habits.map((habit) => (
                 <HabitCard
                   key={habit.id}
@@ -206,6 +204,14 @@ export default function Dashboard() {
                   weather={weather}
                 />
               ))}
+
+              {/* Create New Habit Button */}
+              <button
+                onClick={() => setIsFormOpen(true)}
+                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center gap-2 text-gray-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-300 group"
+              >
+                <span className="font-medium">Create A New Habit</span>
+              </button>
             </div>
           )}
         </div>
