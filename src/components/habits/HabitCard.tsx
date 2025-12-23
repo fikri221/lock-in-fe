@@ -68,8 +68,10 @@ export default function HabitCard({
   return (
     <div
       onClick={handleCardClick}
-      className={`relative bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 group overflow-visible ${
-        isCompleted ? "bg-green-50/30" : ""
+      className={`relative mb-6 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border group overflow-visible ${
+        isCompleted
+          ? "bg-green-50 border-green-200"
+          : "bg-white border-gray-100"
       }`}
     >
       <div className="flex items-center gap-4">
@@ -182,7 +184,7 @@ export default function HabitCard({
           <button
             onClick={handleToggle}
             className={`
-              rounded-full flex items-center justify-center transition-all duration-300
+              w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
               ${
                 isCompleted
                   ? "bg-green-500 text-white shadow-lg scale-105"
@@ -191,9 +193,11 @@ export default function HabitCard({
             `}
           >
             {isCompleted ? (
-              <Check className="w-8 h-8" size={20} />
+              <Check className="w-6 h-6" />
+            ) : isSkipped ? (
+              <SkipForward className="w-6 h-6" />
             ) : (
-              <div className="w-8 h-8 rounded-full border-2 border-gray-300" />
+              <div className="w-full h-full rounded-full border-2 border-gray-300" />
             )}
           </button>
         </div>

@@ -192,7 +192,7 @@ export default function Dashboard() {
               </button>
             </div>
           ) : (
-            <div className="grid gap-6">
+            <>
               {habits.map((habit) => (
                 <HabitCard
                   key={habit.id}
@@ -212,7 +212,7 @@ export default function Dashboard() {
               >
                 <span className="font-medium">Create A New Habit</span>
               </button>
-            </div>
+            </>
           )}
         </div>
       </main>
