@@ -213,7 +213,7 @@ export default function HabitDetailPage() {
                     </h1>
                     <div className="flex items-center gap-3 text-sm text-gray-600 mb-2">
                       <span className="px-2 py-1 bg-gray-100 rounded-lg font-medium">
-                        {habit.type}
+                        {habit.category}
                       </span>
                       {habit.scheduledTime && (
                         <div className="flex items-center gap-1">

@@ -68,7 +68,7 @@ export default function HabitCard({
   return (
     <div
       onClick={handleCardClick}
-      className={`relative mb-6 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border group overflow-visible ${
+      className={`relative mb-4 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 border group overflow-visible ${
         isCompleted
           ? "bg-green-50 border-green-200"
           : "bg-white border-gray-100"
@@ -136,7 +136,7 @@ export default function HabitCard({
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs font-medium text-gray-500">
-              {habit.type}
+              {habit.category}
             </span>
             {habit.scheduledTime && (
               <>

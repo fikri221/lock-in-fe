@@ -21,9 +21,14 @@ export enum HabitViewMode {
 export interface CreateHabitRequest {
   name: string;
   description?: string;
-  type?: string;
+  category?: string;
   icon?: string;
   color?: string;
+  habitType: string;
+  targetUnit?: string;
+  targetValue?: number;
+  targetCount?: number;
+  allowFlexible: boolean;
   scheduledTime?: string;
   isWeatherDependent?: boolean;
   requiresGoodWeather?: boolean;
@@ -33,9 +38,14 @@ export interface CreateHabitRequest {
 export interface UpdateHabitRequest {
   name?: string;
   description?: string;
-  type?: string;
+  category?: string;
   icon?: string;
   color?: string;
+  habitType?: string;
+  targetUnit?: string;
+  targetValue?: number;
+  targetCount?: number;
+  allowFlexible?: boolean;
   scheduledTime?: string;
   isWeatherDependent?: boolean;
   requiresGoodWeather?: boolean;
