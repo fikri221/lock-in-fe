@@ -15,7 +15,7 @@ import { useState } from "react";
 
 interface HabitCardProps {
   habit: Habit;
-  onComplete: (id: string, data?: { progressValue?: number }) => void;
+  onComplete: (id: string, data?: { actualValue?: number }) => void;
   onSkip: (id: string) => void;
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
@@ -47,6 +47,35 @@ export default function HabitCard({
     habit.isWeatherDependent &&
     weather &&
     (weather.condition === "Rain" || weather.temp > 35 || weather.temp < 10);
+
+  // Calculate progress percentage
+  let progressPercentage = 0;
+  if ((habit.targetValue || 0) > 0) {
+    // For measurable habits
+    // Find today's log to get the actual value
+    const todayLog =
+      habit.logs?.find(
+        (l) =>
+          new Date(l.createdAt || "").toDateString() ===
+          new Date().toDateString()
+      ) || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
+
+    const currentValue = todayLog?.actualValue || 0;
+    progressPercentage = Math.min(
+      100,
+      (currentValue / (habit.targetValue || 1)) * 100
+    );
+
+    // Override if status is explicitly COMPLETED (full circle)
+    // if (isCompleted) progressPercentage = 100;
+  } else {
+    // For boolean habits
+    progressPercentage = isCompleted ? 100 : 0;
+  }
+
+  const circumference = 2 * Math.PI * 28;
+  const strokeDashoffset =
+    circumference - (progressPercentage / 100) * circumference;
 
   // Navigate to detail page when card is clicked
   const handleCardClick = (e: React.MouseEvent) => {
@@ -80,7 +109,7 @@ export default function HabitCard({
     e.stopPropagation();
     const value = parseFloat(progressValue);
     if (!isNaN(value)) {
-      onComplete(habit.id, { progressValue: value });
+      onComplete(habit.id, { actualValue: value });
       setShowProgressInput(false);
     }
   };
@@ -124,10 +153,10 @@ export default function HabitCard({
                 fill="none"
                 strokeLinecap="round"
                 className={`transition-all duration-500 ease-out ${
-                  isCompleted ? "text-green-500" : "text-transparent"
+                  progressPercentage > 0 ? "text-green-500" : "text-transparent"
                 }`}
-                strokeDasharray={`${2 * Math.PI * 28}`}
-                strokeDashoffset={isCompleted ? "0" : `${2 * Math.PI * 28}`}
+                strokeDasharray={`${circumference}`}
+                strokeDashoffset={`${strokeDashoffset}`}
               />
             </svg>
 

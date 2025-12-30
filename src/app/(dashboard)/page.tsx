@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   const handleCompleteHabit = async (
     habitId: string,
-    data?: { progressValue?: number }
+    data?: { actualValue?: number }
   ) => {
     try {
       await completeHabit(habitId, {

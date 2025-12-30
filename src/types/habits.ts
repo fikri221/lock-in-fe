@@ -76,5 +76,6 @@ export interface LogCompletion {
   weather?: JSON;
   cancelledAt?: string;
   cancelledReason?: string;
-  progressValue?: number;
+  actualValue?: number;
+  createdAt?: string;
 }
