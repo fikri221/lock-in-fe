@@ -1,4 +1,4 @@
-import { CreateHabitRequest } from "@/types/habits";
+import { CreateHabitRequest, HabitFrequency } from "@/types/habits";
 import { X, Sparkles, LockKeyholeIcon } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState } from "react";
@@ -55,16 +55,34 @@ const POPULAR_HABITS = [
   { name: "Journal", type: "OTHER", icon: "📝", time: "21:00" },
 ];
 
+const DAYS_OF_WEEK = [
+  { label: "Mon", value: 1 },
+  { label: "Tue", value: 2 },
+  { label: "Wed", value: 3 },
+  { label: "Thu", value: 4 },
+  { label: "Fri", value: 5 },
+  { label: "Sat", value: 6 },
+  { label: "Sun", value: 0 },
+];
+
 export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
   const [formData, setFormData] = useState<CreateHabitRequest>({
     name: "",
     description: "",
-    type: "OTHER",
+    category: "OTHER",
     icon: "⭐",
     color: "#6b7280",
-    scheduledTime: "",
+    frequency: HabitFrequency.DAILY,
+    habitType: "boolean", // 'boolean' or 'numeric'
+    targetValue: 0,
+    targetCount: 0,
+    targetUnit: "",
+    targetDays: [],
+    allowFlexible: false,
+    scheduledTime: undefined,
     isWeatherDependent: false,
     requiresGoodWeather: false,
+    reminderEnabled: true,
     isActive: true,
   });
 
@@ -74,15 +92,39 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    onSubmit(formData);
+
+    // Clean up data before submit
+    const submissionData = { ...formData };
+
+    // Cleanup based on Frequency
+    if (submissionData.frequency === HabitFrequency.DAILY) {
+      submissionData.targetDays = undefined;
+      submissionData.targetCount = undefined; // KEEP targetCount for Daily
+      submissionData.allowFlexible = true;
+    } else if (submissionData.frequency === HabitFrequency.WEEKLY) {
+      if (submissionData.allowFlexible) {
+        // Flexible: Keep targetCount, clear targetDays
+        submissionData.targetDays = undefined;
+      } else {
+        // Specific Days: Keep targetDays, set targetCount based on days length for backend consistency
+        submissionData.targetCount = submissionData.targetDays?.length || 0;
+      }
+    }
+
+    if (submissionData.habitType === "boolean") {
+      submissionData.targetValue = undefined;
+      submissionData.targetUnit = undefined;
+    }
+
+    onSubmit(submissionData);
   };
 
-  const handleTypeChange = (type: string) => {
-    const selected = HABIT_TYPES.find((t) => t.value === type);
+  const handleTypeChange = (category: string) => {
+    const selected = HABIT_TYPES.find((t) => t.value === category);
     if (selected) {
       setFormData({
         ...formData,
-        type,
+        category,
         icon: selected.icon,
         color: selected.color,
       });
@@ -94,12 +136,23 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
     setFormData({
       ...formData,
       name: suggestion.name,
-      type: suggestion.type,
+      category: suggestion.type,
       icon: suggestion.icon,
       color: selectedType?.color || "#6b7280",
       scheduledTime: suggestion.time,
     });
     setShowSuggestions(false);
+  };
+
+  const toggleDay = (dayValue: number) => {
+    const currentDays = formData.targetDays || [];
+    const newDays = currentDays.includes(dayValue)
+      ? currentDays.filter((d) => d !== dayValue)
+      : [...currentDays, dayValue];
+    setFormData({
+      ...formData,
+      targetDays: newDays,
+    });
   };
 
   return (
@@ -248,15 +301,15 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                   type="button"
                   onClick={() => handleTypeChange(type.value)}
                   className={`p-4 rounded-xl border-2 transition-all ${
-                    formData.type === type.value
+                    formData.category === type.value
                       ? "border-blue-500 bg-blue-50 shadow-md scale-105"
                       : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
                   style={{
                     borderColor:
-                      formData.type === type.value ? type.color : undefined,
+                      formData.category === type.value ? type.color : undefined,
                     backgroundColor:
-                      formData.type === type.value
+                      formData.category === type.value
                         ? type.color + "15"
                         : undefined,
                   }}
@@ -273,24 +326,239 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             </div>
           </div>
 
-          {/* Scheduled Time */}
+          {/* Frequency Section */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Scheduled Time (Optional)
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Frequency *
             </label>
-            <div className="relative">
-              <input
-                type="time"
-                value={formData.scheduledTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, scheduledTime: e.target.value })
-                }
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Daily", value: HabitFrequency.DAILY },
+                { label: "Weekly", value: HabitFrequency.WEEKLY },
+                // { label: "Monthly", value: HabitFrequency.MONTHLY },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, frequency: opt.value })
+                  }
+                  className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                    formData.frequency === opt.value
+                      ? "border-blue-500 bg-blue-50 text-blue-700"
+                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Set a reminder time for this habit
-            </p>
+
+            {/* Daily Options */}
+            {formData.frequency === HabitFrequency.DAILY && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Times per day
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.targetCount || 1}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        targetCount: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Weekly Options */}
+            {formData.frequency === HabitFrequency.WEEKLY && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.allowFlexible}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        allowFlexible: e.target.checked,
+                        targetDays: e.target.checked ? [] : formData.targetDays,
+                      })
+                    }
+                    className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Flexible Schedule
+                  </span>
+                </label>
+
+                {formData.allowFlexible ? (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">
+                      Times per week
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={7}
+                      value={formData.targetCount || 1}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          targetCount: Number(e.target.value),
+                        })
+                      }
+                      className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-2">
+                      Select Days
+                    </label>
+                    <div className="flex gap-2 flex-wrap">
+                      {DAYS_OF_WEEK.map((day) => (
+                        <button
+                          key={day.value}
+                          type="button"
+                          onClick={() => toggleDay(day.value)}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                            (formData.targetDays || []).includes(day.value)
+                              ? "bg-blue-500 text-white shadow-md"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          {day.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Habit Type / Goal */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Habit Type
+            </label>
+            <div className="flex gap-4 mb-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, habitType: "boolean" })
+                }
+                className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                  formData.habitType === "boolean"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                Simple (Yes/No)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, habitType: "measurable" })
+                }
+                className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                  formData.habitType === "measurable"
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                Measurable (e.g. 10 pages)
+              </button>
+            </div>
+
+            {formData.habitType === "measurable" && (
+              <div className="flex gap-4">
+                <div className="w-1/3">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Target
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.targetValue || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        targetValue: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="e.g. 10"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">
+                    Unit
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.targetUnit || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, targetUnit: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="pages, minutes, cups..."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Scheduled Time & Reminders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Scheduled Time
+              </label>
+              <div className="relative">
+                <input
+                  type="time"
+                  value={formData.scheduledTime || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, scheduledTime: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-end pb-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div
+                  className={`w-12 h-6 rounded-full p-1 transition-all ${
+                    formData.reminderEnabled ? "bg-blue-500" : "bg-gray-300"
+                  }`}
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      reminderEnabled: !formData.reminderEnabled,
+                    })
+                  }
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all transform ${
+                      formData.reminderEnabled
+                        ? "translate-x-6"
+                        : "translate-x-0"
+                    }`}
+                  />
+                </div>
+                <span className="text-sm font-medium text-gray-700">
+                  Enable Reminders
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Weather Options */}

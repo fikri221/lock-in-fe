@@ -50,6 +50,7 @@ export const useHabits = () => {
         id: "",
         currentStreak: 0,
         totalCompletions: 0,
+        longestStreak: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },

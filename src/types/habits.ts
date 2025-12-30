@@ -7,15 +7,15 @@ export enum LogCompletionType {
 }
 
 export enum HabitFrequency {
-  DAILY = "daily",
-  WEEKLY = "weekly",
-  MONTHLY = "monthly",
+  DAILY = "DAILY",
+  WEEKLY = "WEEKLY",
+  MONTHLY = "MONTHLY",
 }
 
 export enum HabitViewMode {
-  TODAY = "today",
-  CALENDAR = "calendar",
-  INSIGHTS = "insights",
+  TODAY = "TODAY",
+  CALENDAR = "CALENDAR",
+  INSIGHTS = "INSIGHTS",
 }
 
 export interface CreateHabitRequest {
@@ -24,14 +24,17 @@ export interface CreateHabitRequest {
   category?: string;
   icon?: string;
   color?: string;
+  frequency?: HabitFrequency | string;
   habitType: string;
   targetUnit?: string;
   targetValue?: number;
   targetCount?: number;
+  targetDays?: number[];
   allowFlexible: boolean;
   scheduledTime?: string;
   isWeatherDependent?: boolean;
   requiresGoodWeather?: boolean;
+  reminderEnabled?: boolean;
   isActive: boolean;
 }
 
@@ -41,14 +44,17 @@ export interface UpdateHabitRequest {
   category?: string;
   icon?: string;
   color?: string;
+  frequency?: HabitFrequency | string;
   habitType?: string;
   targetUnit?: string;
   targetValue?: number;
   targetCount?: number;
+  targetDays?: number[];
   allowFlexible?: boolean;
   scheduledTime?: string;
   isWeatherDependent?: boolean;
   requiresGoodWeather?: boolean;
+  reminderEnabled?: boolean;
   isActive?: boolean;
 }
 
@@ -58,8 +64,8 @@ export interface Habit extends CreateHabitRequest {
   longestStreak: number;
   totalCompletions: number;
   logs?: LogCompletion[];
-  createdAt: string; // tambahkan
-  updatedAt: string; // tambahkan
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LogCompletion {
@@ -70,4 +76,5 @@ export interface LogCompletion {
   weather?: JSON;
   cancelledAt?: string;
   cancelledReason?: string;
+  progressValue?: number;
 }
