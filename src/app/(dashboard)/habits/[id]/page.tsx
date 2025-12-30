@@ -33,7 +33,8 @@ export default function HabitDetailPage() {
   const params = useParams();
   const habitId = params.id as string;
 
-  const { habits, loading, deleteHabit, updateHabit } = useHabits();
+  const { habits, loading, deleteHabit, updateHabit, completeHabit } =
+    useHabits();
   // Derive habit directly instead of using local state to avoid infinite loops
   const habit = useMemo(
     () => habits.find((h) => h.id === habitId),
@@ -45,7 +46,7 @@ export default function HabitDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
-  const [editedTime, setEditedTime] = useState("");
+  const [editedTime, setEditedTime] = useState<string | undefined>(undefined);
 
   // Handle habit not found and form initialization
   useEffect(() => {
@@ -59,8 +60,8 @@ export default function HabitDetailPage() {
         if (editedName !== habit.name) setEditedName(habit.name);
         if (editedDescription !== (habit.description || ""))
           setEditedDescription(habit.description || "");
-        if (editedTime !== (habit.scheduledTime || ""))
-          setEditedTime(habit.scheduledTime || "");
+        if (editedTime !== (habit.scheduledTime || undefined))
+          setEditedTime(habit.scheduledTime || undefined);
       }
     }
   }, [
@@ -75,7 +76,9 @@ export default function HabitDetailPage() {
 
   const handleComplete = async () => {
     try {
-      // await completeHabit(habitId);
+      await completeHabit(habitId, {
+        status: LogCompletionType.COMPLETED,
+      });
       toast.success("Habit completed! 🎉");
     } catch (error) {
       console.error("Error completing habit:", error);
@@ -197,7 +200,7 @@ export default function HabitDetailPage() {
                           setIsEditing(false);
                           setEditedName(habit.name);
                           setEditedDescription(habit.description || "");
-                          setEditedTime(habit.scheduledTime || "");
+                          setEditedTime(habit.scheduledTime || undefined);
                         }}
                         className="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >

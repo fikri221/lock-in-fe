@@ -51,9 +51,15 @@ export default function Dashboard() {
     });
   }, []);
 
-  const handleCompleteHabit = async (habitId: string) => {
+  const handleCompleteHabit = async (
+    habitId: string,
+    data?: { progressValue?: number }
+  ) => {
     try {
-      await completeHabit(habitId, { status: LogCompletionType.COMPLETED });
+      await completeHabit(habitId, {
+        status: LogCompletionType.COMPLETED,
+        ...data,
+      });
     } catch (error) {
       console.error("Error completing habit:", error);
     }

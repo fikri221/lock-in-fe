@@ -15,7 +15,7 @@ import { useState } from "react";
 
 interface HabitCardProps {
   habit: Habit;
-  onComplete: (id: string) => void;
+  onComplete: (id: string, data?: { progressValue?: number }) => void;
   onSkip: (id: string) => void;
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
@@ -32,6 +32,8 @@ export default function HabitCard({
 }: HabitCardProps) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
+  const [showProgressInput, setShowProgressInput] = useState(false);
+  const [progressValue, setProgressValue] = useState<string>("");
 
   // Check if completed today
   const isCompleted =
@@ -61,8 +63,30 @@ export default function HabitCard({
     if (isCompleted) {
       onCancel(habit.id);
     } else {
-      onComplete(habit.id);
+      // Check if habit is measurable
+      if ((habit.targetValue || 0) > 0) {
+        // Initialize with target value if empty
+        if (!progressValue) {
+          setProgressValue(habit.targetValue?.toString() || "");
+        }
+        setShowProgressInput(true);
+      } else {
+        onComplete(habit.id);
+      }
     }
+  };
+
+  const submitProgress = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const value = parseFloat(progressValue);
+    if (!isNaN(value)) {
+      onComplete(habit.id, { progressValue: value });
+      setShowProgressInput(false);
+    }
+  };
+
+  const handleInputClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
   };
 
   return (
@@ -201,6 +225,61 @@ export default function HabitCard({
             )}
           </button>
         </div>
+
+        {/* Measurement Input Popover */}
+        {showProgressInput && (
+          <>
+            <div
+              className="fixed inset-0 z-20"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowProgressInput(false);
+              }}
+            />
+            <div
+              className="absolute right-0 top-16 z-30 bg-white rounded-xl shadow-xl border border-gray-200 p-4 min-w-[200px] animate-in fade-in zoom-in-95 duration-200"
+              onClick={handleInputClick}
+            >
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">
+                    Log Progress
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Target: {habit.targetValue} {habit.targetUnit}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={progressValue}
+                    onChange={(e) => setProgressValue(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="Value"
+                    autoFocus
+                  />
+                  <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
+                    {habit.targetUnit}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowProgressInput(false)}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitProgress}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Menu Button (Absolute Top Right) */}
