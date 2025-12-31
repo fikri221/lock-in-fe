@@ -66,6 +66,14 @@ export default function HabitCard({
       (currentValue / (habit.targetValue || 1)) * 100
     );
 
+    // If usage status is CANCELLED or SKIPPED, treat as 0 progress
+    if (
+      todayLog?.status === LogCompletionType.CANCELLED ||
+      todayLog?.status === LogCompletionType.SKIPPED
+    ) {
+      progressPercentage = 0;
+    }
+
     // Override if status is explicitly COMPLETED (full circle)
     // if (isCompleted) progressPercentage = 100;
   } else {
@@ -200,7 +208,7 @@ export default function HabitCard({
                 </span>
               </>
             )}
-            {isSkipped && (
+            {isSkipped && !isCompleted && (
               <span className="text-xs font-medium text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">
                 Skipped
               </span>
