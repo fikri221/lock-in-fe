@@ -204,7 +204,7 @@ export default function HabitCard({
                 <span className="text-slate-300">•</span>
                 <span className="flex items-center gap-1 text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                   <Clock className="w-3 h-3" />
-                  {habit.scheduledTime}
+                  {habit.scheduledTime?.slice(0, 5)}
                 </span>
               </>
             )}

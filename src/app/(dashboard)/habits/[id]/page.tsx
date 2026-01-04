@@ -60,8 +60,8 @@ export default function HabitDetailPage() {
         if (editedName !== habit.name) setEditedName(habit.name);
         if (editedDescription !== (habit.description || ""))
           setEditedDescription(habit.description || "");
-        if (editedTime !== (habit.scheduledTime || undefined))
-          setEditedTime(habit.scheduledTime || undefined);
+        if (editedTime !== (habit.scheduledTime?.slice(0, 5) || undefined))
+          setEditedTime(habit.scheduledTime?.slice(0, 5) || undefined);
       }
     }
   }, [
@@ -200,7 +200,9 @@ export default function HabitDetailPage() {
                           setIsEditing(false);
                           setEditedName(habit.name);
                           setEditedDescription(habit.description || "");
-                          setEditedTime(habit.scheduledTime || undefined);
+                          setEditedTime(
+                            habit.scheduledTime?.slice(0, 5) || undefined
+                          );
                         }}
                         className="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                       >
@@ -221,7 +223,7 @@ export default function HabitDetailPage() {
                       {habit.scheduledTime && (
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{habit.scheduledTime}</span>
+                          <span>{habit.scheduledTime?.slice(0, 5)}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-1">

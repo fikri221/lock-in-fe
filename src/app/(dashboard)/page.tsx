@@ -159,14 +159,14 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ContextCards
+        {/* <ContextCards
           weather={weather}
           habits={habits}
           completionRate={completionRate}
-        />
+        /> */}
         <SmartSuggestions habits={habits} weather={weather} />
 
-        <div className="mt-8">
+        <div className="">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Your Habits</h2>
