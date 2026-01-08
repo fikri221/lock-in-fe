@@ -20,6 +20,7 @@ interface HabitCardProps {
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
   weather: Weather | null;
+  date?: Date;
 }
 
 export default function HabitCard({
@@ -29,6 +30,7 @@ export default function HabitCard({
   onDelete,
   onCancel,
   weather,
+  date = new Date(),
 }: HabitCardProps) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
@@ -37,10 +39,19 @@ export default function HabitCard({
 
   // Check if completed today
   const isCompleted =
-    habit.logs?.some((l) => l.status === LogCompletionType.COMPLETED) || false;
+    habit.logs?.some((l) => {
+      return (
+        l.status === LogCompletionType.COMPLETED &&
+        new Date(l.createdAt || "").toDateString() === date.toDateString()
+      );
+    }) || false;
 
   const isSkipped =
-    habit.logs?.some((l) => l.status === LogCompletionType.SKIPPED) || false;
+    habit.logs?.some(
+      (l) =>
+        l.status === LogCompletionType.SKIPPED &&
+        new Date(l.createdAt || "").toDateString() === date.toDateString()
+    ) || false;
 
   // Check if weather is bad for outdoor habits
   const isWeatherBad =
@@ -56,8 +67,7 @@ export default function HabitCard({
     const todayLog =
       habit.logs?.find(
         (l) =>
-          new Date(l.createdAt || "").toDateString() ===
-          new Date().toDateString()
+          new Date(l.createdAt || "").toDateString() === date.toDateString()
       ) || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
 
     const currentValue = todayLog?.actualValue || 0;
@@ -69,7 +79,8 @@ export default function HabitCard({
     // If usage status is CANCELLED or SKIPPED, treat as 0 progress
     if (
       todayLog?.status === LogCompletionType.CANCELLED ||
-      todayLog?.status === LogCompletionType.SKIPPED
+      todayLog?.status === LogCompletionType.SKIPPED ||
+      !isCompleted
     ) {
       progressPercentage = 0;
     }

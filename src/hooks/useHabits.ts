@@ -10,7 +10,9 @@ import {
 } from "@/types/habits";
 import { toast } from "sonner";
 
-export const useHabits = () => {
+export const useHabits = (
+  dateOrRange: string | { startDate: string; endDate: string }
+) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,12 @@ export const useHabits = () => {
   const fetchHabits = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await habitsAPI.getHabits({ active: true });
+      const params =
+        typeof dateOrRange === "string"
+          ? { date: dateOrRange, active: true }
+          : { ...dateOrRange, active: true };
+
+      const response = await habitsAPI.getHabits(params);
       setHabits(response.data.habits);
       setError(null);
     } catch (err: unknown) {
@@ -33,7 +40,7 @@ export const useHabits = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateOrRange]);
 
   // Type guard for Axios errors
   function isAxiosError(

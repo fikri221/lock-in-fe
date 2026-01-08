@@ -59,7 +59,12 @@ export const authAPI = {
 };
 
 export const habitsAPI = {
-  getHabits: (params?: { active?: boolean }) => api.get("/habits", { params }),
+  getHabits: (params?: {
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    active?: boolean;
+  }) => api.get("/habits", { params }),
 
   getHabitById: (id: string) => api.get(`/habits/${id}`),
 

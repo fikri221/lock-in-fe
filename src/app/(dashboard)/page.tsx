@@ -7,14 +7,19 @@ import { useAuthStore } from "@/store/authStore";
 import { useHabits } from "@/hooks/useHabits";
 import HabitCard from "@/components/habits/HabitCard";
 import HabitForm from "@/components/habits/HabitForm";
-import ContextCards from "@/components/dashboard/ContextCards";
 import SmartSuggestions from "@/components/dashboard/SmartSuggestions";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import HorizontalCalendar from "@/components/dashboard/HorizontalCalendar";
 import { Weather } from "@/types/weather";
 import { LogCompletionType, CreateHabitRequest } from "@/types/habits";
 
 export default function Dashboard() {
   const router = useRouter();
+
+  const [weather, setWeather] = useState<Weather | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const {
     user,
     isAuthenticated,
@@ -29,10 +34,7 @@ export default function Dashboard() {
     skipHabit,
     deleteHabit,
     cancelHabit,
-  } = useHabits();
-
-  const [weather, setWeather] = useState<Weather | null>(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  } = useHabits(selectedDate.toDateString());
 
   useEffect(() => {
     // Check authentication
@@ -114,11 +116,15 @@ export default function Dashboard() {
   }
 
   const completedToday = habits.filter((h) =>
-    (h.logs ?? []).some((l) => l.status === LogCompletionType.COMPLETED)
+    (h.logs ?? []).some(
+      (l) =>
+        l.status === LogCompletionType.COMPLETED &&
+        new Date(l.createdAt || "").toDateString() ===
+          selectedDate.toDateString()
+    )
   ).length;
+
   const totalHabits = habits.length;
-  const completionRate =
-    totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -142,7 +148,7 @@ export default function Dashboard() {
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg border border-green-200">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-sm font-medium text-green-700">
-                  {completedToday}/{totalHabits} Today
+                  {completedToday}/{totalHabits} Completed
                 </span>
               </div>
 
@@ -156,21 +162,34 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Horizontal Calendar */}
+        <div className="border-t border-gray-100 bg-white/50 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <HorizontalCalendar
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          </div>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* <ContextCards
-          weather={weather}
-          habits={habits}
-          completionRate={completionRate}
-        /> */}
         <SmartSuggestions habits={habits} weather={weather} />
 
         <div className="">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Your Habits</h2>
-              <p className="text-gray-600 mt-1">Track your daily progress</p>
+              <p className="text-gray-600 mt-1">
+                {selectedDate.toDateString() === new Date().toDateString()
+                  ? "Track your daily progress"
+                  : `Progress for ${selectedDate.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}`}
+              </p>
             </div>
             <button
               onClick={() => setIsFormOpen(true)}
@@ -203,6 +222,7 @@ export default function Dashboard() {
                 <HabitCard
                   key={habit.id}
                   habit={habit}
+                  date={selectedDate}
                   onComplete={handleCompleteHabit}
                   onSkip={handleSkipHabit}
                   onDelete={handleDeleteHabit}
