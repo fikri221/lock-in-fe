@@ -55,7 +55,7 @@ export default function Dashboard() {
 
   const handleCompleteHabit = async (
     habitId: string,
-    data?: { actualValue?: number }
+    data?: { actualValue?: number; logDate: Date }
   ) => {
     try {
       await completeHabit(habitId, {
@@ -162,9 +162,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </header>
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Horizontal Calendar */}
-        <div className="border-t border-gray-100 bg-white/50 backdrop-blur-sm">
+        <div className="backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <HorizontalCalendar
               selectedDate={selectedDate}
@@ -172,9 +174,7 @@ export default function Dashboard() {
             />
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SmartSuggestions habits={habits} weather={weather} />
 
         <div className="">

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { format, subDays, isSameDay } from "date-fns";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HorizontalCalendarProps {
@@ -26,22 +27,47 @@ export default function HorizontalCalendar({
     if (scrollContainerRef.current) {
       const selectedElement = scrollContainerRef.current.querySelector(
         `[data-date="${selectedDate.toISOString().split("T")[0]}"]`
-      );
+      ) as HTMLElement;
+
       if (selectedElement) {
-        selectedElement.scrollIntoView({
+        const container = scrollContainerRef.current;
+        const scrollLeft =
+          selectedElement.offsetLeft -
+          container.clientWidth / 2 +
+          selectedElement.clientWidth / 2;
+
+        container.scrollTo({
+          left: scrollLeft,
           behavior: "smooth",
-          block: "nearest",
-          inline: "center",
         });
       }
     }
   }, [selectedDate]);
 
+  const scroll = (direction: "left" | "right") => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 200;
+      scrollContainerRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
-    <div className="relative group">
+    <div className="relative group flex items-center">
+      {/* Left Navigation Button */}
+      <button
+        onClick={() => scroll("left")}
+        className="hidden md:flex absolute left-0 z-10 -ml-4 h-full w-12 items-center justify-start bg-gradient-to-r from-white via-white/80 to-transparent pr-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+        aria-label="Scroll left"
+      >
+        <ChevronLeft className="w-6 h-6" />
+      </button>
+
       <div
         ref={scrollContainerRef}
-        className="flex space-x-2 overflow-x-auto pb-4 pt-2 -mx-4 px-4 scrollbar-hide snap-x"
+        className="relative flex space-x-2 overflow-x-auto pb-4 pt-2 px-4 scrollbar-hide snap-x touch-pan-x w-full"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {dates.map((date) => {
@@ -54,7 +80,7 @@ export default function HorizontalCalendar({
               data-date={date.toISOString().split("T")[0]}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl transition-all duration-200 snap-center",
+                "flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl transition-all duration-200 snap-center cursor-pointer",
                 isSelected
                   ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg scale-105"
                   : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100",
@@ -96,9 +122,14 @@ export default function HorizontalCalendar({
         })}
       </div>
 
-      {/* Gradient fade masks */}
-      <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-slate-50 to-transparent pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-slate-50 to-transparent pointer-events-none" />
+      {/* Right Navigation Button */}
+      <button
+        onClick={() => scroll("right")}
+        className="hidden md:flex absolute right-0 z-10 -mr-4 h-full w-12 items-center justify-end bg-gradient-to-l from-white via-white/80 to-transparent pl-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+        aria-label="Scroll right"
+      >
+        <ChevronRight className="w-6 h-6" />
+      </button>
     </div>
   );
 }

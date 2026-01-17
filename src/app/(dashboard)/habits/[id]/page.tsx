@@ -34,7 +34,7 @@ export default function HabitDetailPage() {
   const habitId = params.id as string;
 
   const { habits, loading, deleteHabit, updateHabit, completeHabit } =
-    useHabits();
+    useHabits(new Date().toDateString());
   // Derive habit directly instead of using local state to avoid infinite loops
   const habit = useMemo(
     () => habits.find((h) => h.id === habitId),
