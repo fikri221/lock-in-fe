@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 
 export const useHabits = (
-  dateOrRange: string | { startDate: string; endDate: string }
+  dateOrRange: string | { startDate: string; endDate: string },
 ) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export const useHabits = (
 
   // Type guard for Axios errors
   function isAxiosError(
-    error: unknown
+    error: unknown,
   ): error is { response?: { data?: { error?: string } } } {
     return typeof error === "object" && error !== null && "response" in error;
   }
@@ -66,7 +66,7 @@ export const useHabits = (
     try {
       const response = await habitsAPI.createHabit(data);
       setHabits((prev) =>
-        prev.map((h) => (h.id === "" ? response.data.habit : h))
+        prev.map((h) => (h.id === "" ? response.data.habit : h)),
       );
       toast.success("Habit created successfully!");
       return response.data.habit;
@@ -147,7 +147,7 @@ export const useHabits = (
           };
         }
         return h;
-      })
+      }),
     );
 
     try {
@@ -164,7 +164,7 @@ export const useHabits = (
             };
           }
           return h;
-        })
+        }),
       );
 
       toast.success("Habit completed! 🎉");
@@ -184,14 +184,14 @@ export const useHabits = (
     }
   };
 
-  const cancelHabit = async (id: string) => {
+  const cancelHabit = async (id: string, logCompletion: LogCompletion) => {
     const previousHabits = habits; // Capture state
 
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id === id) {
           const optimisticLog = {
-            status: LogCompletionType.CANCELLED,
+            ...logCompletion,
           };
 
           let currentStreak = h.currentStreak;
@@ -199,7 +199,7 @@ export const useHabits = (
 
           // Check if the habit was completed
           const wasCompleted = h.logs?.some(
-            (l) => l.status === LogCompletionType.COMPLETED
+            (l) => l.status === LogCompletionType.COMPLETED,
           );
 
           // If the habit was completed, decrement the streak and total completions
@@ -217,18 +217,18 @@ export const useHabits = (
                 (l) =>
                   // Remove completed and skipped logs
                   l.status !== LogCompletionType.COMPLETED &&
-                  l.status !== LogCompletionType.SKIPPED
+                  l.status !== LogCompletionType.SKIPPED,
               ),
               optimisticLog,
             ],
           };
         }
         return h;
-      })
+      }),
     );
 
     try {
-      const response = await habitsAPI.cancelHabit(id);
+      const response = await habitsAPI.cancelHabit(id, logCompletion);
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
@@ -241,7 +241,7 @@ export const useHabits = (
             };
           }
           return h;
-        })
+        }),
       );
 
       toast.info("Habit cancelled for today");
@@ -274,7 +274,7 @@ export const useHabits = (
           };
         }
         return h;
-      })
+      }),
     );
 
     try {
@@ -293,7 +293,7 @@ export const useHabits = (
             };
           }
           return h;
-        })
+        }),
       );
 
       toast.info("Habit skipped for today");
@@ -307,8 +307,8 @@ export const useHabits = (
                 ...h,
                 logs: [...(h.logs || []).slice(0, -1)],
               }
-            : h
-        )
+            : h,
+        ),
       );
       if (isAxiosError(err)) {
         toast.error(err.response?.data?.error || "Failed to skip habit");

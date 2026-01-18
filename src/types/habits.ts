@@ -74,7 +74,7 @@ export interface LogCompletion {
   mood?: number;
   energy?: number;
   weather?: JSON;
-  logDate?: string;
+  logDate?: Date;
   cancelledAt?: string;
   cancelledReason?: string;
   actualValue?: number;

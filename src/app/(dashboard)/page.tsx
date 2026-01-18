@@ -55,7 +55,7 @@ export default function Dashboard() {
 
   const handleCompleteHabit = async (
     habitId: string,
-    data?: { actualValue?: number; logDate: Date }
+    data?: { actualValue?: number; logDate: Date },
   ) => {
     try {
       await completeHabit(habitId, {
@@ -75,9 +75,18 @@ export default function Dashboard() {
     }
   };
 
-  const handleCancelHabit = async (habitId: string) => {
+  const handleCancelHabit = async (
+    habitId: string,
+    data?: {
+      cancelledReason?: string;
+      logDate: Date;
+    },
+  ) => {
     try {
-      await cancelHabit(habitId);
+      await cancelHabit(habitId, {
+        status: LogCompletionType.CANCELLED,
+        ...data,
+      });
     } catch (error) {
       console.error("Error cancelling habit:", error);
     }
@@ -120,8 +129,8 @@ export default function Dashboard() {
       (l) =>
         l.status === LogCompletionType.COMPLETED &&
         new Date(l.createdAt || "").toDateString() ===
-          selectedDate.toDateString()
-    )
+          selectedDate.toDateString(),
+    ),
   ).length;
 
   const totalHabits = habits.length;

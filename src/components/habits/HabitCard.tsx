@@ -15,10 +15,16 @@ import { useState } from "react";
 
 interface HabitCardProps {
   habit: Habit;
-  onComplete: (id: string, data?: { actualValue?: number }) => void;
+  onComplete: (
+    id: string,
+    data?: { actualValue?: number; logDate: Date },
+  ) => void;
   onSkip: (id: string) => void;
   onDelete: (id: string) => void;
-  onCancel: (id: string) => void;
+  onCancel: (
+    id: string,
+    data?: { cancelledReason?: string; logDate: Date },
+  ) => void;
   weather: Weather | null;
   date?: Date;
 }
@@ -42,7 +48,7 @@ export default function HabitCard({
     habit.logs?.some((l) => {
       return (
         l.status === LogCompletionType.COMPLETED &&
-        new Date(l.createdAt || "").toDateString() === date.toDateString()
+        new Date(l.logDate || "").toDateString() === date.toDateString()
       );
     }) || false;
 
@@ -50,7 +56,7 @@ export default function HabitCard({
     habit.logs?.some(
       (l) =>
         l.status === LogCompletionType.SKIPPED &&
-        new Date(l.createdAt || "").toDateString() === date.toDateString()
+        new Date(l.logDate || "").toDateString() === date.toDateString(),
     ) || false;
 
   // Check if weather is bad for outdoor habits
@@ -64,29 +70,35 @@ export default function HabitCard({
   if ((habit.targetValue || 0) > 0) {
     // For measurable habits
     // Find today's log to get the actual value
+    // use filter to get the latest log
     const todayLog =
-      habit.logs?.find(
-        (l) =>
-          new Date(l.createdAt || "").toDateString() === date.toDateString()
-      ) || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
+      habit.logs
+        ?.filter(
+          (l) =>
+            new Date(l.logDate || "").toDateString() === date.toDateString(),
+        )
+        .pop() || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
 
     const currentValue = todayLog?.actualValue || 0;
     progressPercentage = Math.min(
       100,
-      (currentValue / (habit.targetValue || 1)) * 100
+      (currentValue / (habit.targetValue || 1)) * 100,
     );
 
     // If usage status is CANCELLED or SKIPPED, treat as 0 progress
     if (
-      todayLog?.status === LogCompletionType.CANCELLED ||
-      todayLog?.status === LogCompletionType.SKIPPED ||
+      (todayLog?.status === LogCompletionType.CANCELLED &&
+        new Date(todayLog?.logDate || "").toDateString() ===
+          date.toString().substring(0, 15)) ||
+      (todayLog?.status === LogCompletionType.SKIPPED &&
+        new Date(todayLog?.logDate || "").toDateString() ===
+          date.toString().substring(0, 15)) ||
       !isCompleted
     ) {
       progressPercentage = 0;
     }
 
     // Override if status is explicitly COMPLETED (full circle)
-    // if (isCompleted) progressPercentage = 100;
   } else {
     // For boolean habits
     progressPercentage = isCompleted ? 100 : 0;
@@ -109,7 +121,7 @@ export default function HabitCard({
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isCompleted) {
-      onCancel(habit.id);
+      onCancel(habit.id, { cancelledReason: "", logDate: date });
     } else {
       // Check if habit is measurable
       if ((habit.targetValue || 0) > 0) {
@@ -128,7 +140,7 @@ export default function HabitCard({
     e.stopPropagation();
     const value = parseFloat(progressValue);
     if (!isNaN(value)) {
-      onComplete(habit.id, { actualValue: value });
+      onComplete(habit.id, { actualValue: value, logDate: date });
       setShowProgressInput(false);
     }
   };
