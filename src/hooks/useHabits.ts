@@ -261,11 +261,12 @@ export const useHabits = (
     }
   };
 
-  const skipHabit = async (id: string) => {
+  const skipHabit = async (id: string, logCompletion: LogCompletion) => {
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id === id) {
           const optimisticLog = {
+            ...logCompletion,
             status: LogCompletionType.SKIPPED,
           };
           return {
@@ -279,6 +280,7 @@ export const useHabits = (
 
     try {
       const response = await habitsAPI.logCompletion(id, {
+        ...logCompletion,
         status: LogCompletionType.SKIPPED,
       });
       const newLog = response.data.habitLog;

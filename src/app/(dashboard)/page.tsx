@@ -67,9 +67,12 @@ export default function Dashboard() {
     }
   };
 
-  const handleSkipHabit = async (habitId: string) => {
+  const handleSkipHabit = async (habitId: string, data?: { logDate: Date }) => {
     try {
-      await skipHabit(habitId);
+      await skipHabit(habitId, {
+        status: LogCompletionType.SKIPPED,
+        ...data,
+      });
     } catch (error) {
       console.error("Error skipping habit:", error);
     }

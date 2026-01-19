@@ -19,7 +19,7 @@ interface HabitCardProps {
     id: string,
     data?: { actualValue?: number; logDate: Date },
   ) => void;
-  onSkip: (id: string) => void;
+  onSkip: (id: string, data?: { logDate: Date }) => void;
   onDelete: (id: string) => void;
   onCancel: (
     id: string,
@@ -42,6 +42,8 @@ export default function HabitCard({
   const [showMenu, setShowMenu] = useState(false);
   const [showProgressInput, setShowProgressInput] = useState(false);
   const [progressValue, setProgressValue] = useState<string>("");
+
+  console.log(habit);
 
   // Check if completed today
   const isCompleted =
@@ -71,7 +73,7 @@ export default function HabitCard({
     // For measurable habits
     // Find today's log to get the actual value
     // use filter to get the latest log
-    const todayLog =
+    const latestLog =
       habit.logs
         ?.filter(
           (l) =>
@@ -79,7 +81,7 @@ export default function HabitCard({
         )
         .pop() || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
 
-    const currentValue = todayLog?.actualValue || 0;
+    const currentValue = latestLog?.actualValue || 0;
     progressPercentage = Math.min(
       100,
       (currentValue / (habit.targetValue || 1)) * 100,
@@ -87,11 +89,11 @@ export default function HabitCard({
 
     // If usage status is CANCELLED or SKIPPED, treat as 0 progress
     if (
-      (todayLog?.status === LogCompletionType.CANCELLED &&
-        new Date(todayLog?.logDate || "").toDateString() ===
+      (latestLog?.status === LogCompletionType.CANCELLED &&
+        new Date(latestLog?.logDate || "").toDateString() ===
           date.toString().substring(0, 15)) ||
-      (todayLog?.status === LogCompletionType.SKIPPED &&
-        new Date(todayLog?.logDate || "").toDateString() ===
+      (latestLog?.status === LogCompletionType.SKIPPED &&
+        new Date(latestLog?.logDate || "").toDateString() ===
           date.toString().substring(0, 15)) ||
       !isCompleted
     ) {
@@ -131,7 +133,7 @@ export default function HabitCard({
         }
         setShowProgressInput(true);
       } else {
-        onComplete(habit.id);
+        onComplete(habit.id, { logDate: date });
       }
     }
   };
@@ -368,7 +370,7 @@ export default function HabitCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSkip(habit.id);
+                    onSkip(habit.id, { logDate: date });
                     setShowMenu(false);
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
