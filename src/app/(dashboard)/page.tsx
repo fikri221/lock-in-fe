@@ -127,7 +127,18 @@ export default function Dashboard() {
     return null; // or return login page redirect component if handled differently
   }
 
-  const completedToday = habits.filter((h) =>
+  // Filter habits for selected date
+  const todaysHabits = habits.filter((habit) => {
+    // If targetDays is defined and not empty, check if today is included
+    if (habit.targetDays && habit.targetDays.length > 0) {
+      const dayOfWeek = selectedDate.getDay();
+      return habit.targetDays.some((d) => Number(d) === dayOfWeek);
+    }
+    // Otherwise show (Daily, Weekly Flexible, etc.)
+    return true;
+  });
+
+  const completedToday = todaysHabits.filter((h) =>
     (h.logs ?? []).some(
       (l) =>
         l.status === LogCompletionType.COMPLETED &&
@@ -136,7 +147,7 @@ export default function Dashboard() {
     ),
   ).length;
 
-  const totalHabits = habits.length;
+  const totalHabits = todaysHabits.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -187,7 +198,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <SmartSuggestions habits={habits} weather={weather} />
+        <SmartSuggestions habits={todaysHabits} weather={weather} />
 
         <div className="">
           <div className="flex items-center justify-between mb-6">
@@ -211,7 +222,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {habits.length === 0 ? (
+          {todaysHabits.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-300">
               <LockKeyholeIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -230,7 +241,7 @@ export default function Dashboard() {
             </div>
           ) : (
             <>
-              {habits.map((habit) => (
+              {todaysHabits.map((habit) => (
                 <HabitCard
                   key={habit.id}
                   habit={habit}

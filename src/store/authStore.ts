@@ -81,7 +81,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = response.data?.data?.user;
 
       if (user) {
-        console.log("User found: ", user);
         localStorage.setItem("user", JSON.stringify(user));
 
         set({

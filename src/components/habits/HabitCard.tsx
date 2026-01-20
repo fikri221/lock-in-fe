@@ -43,8 +43,6 @@ export default function HabitCard({
   const [showProgressInput, setShowProgressInput] = useState(false);
   const [progressValue, setProgressValue] = useState<string>("");
 
-  console.log(habit);
-
   // Check if completed today
   const isCompleted =
     habit.logs?.some((l) => {
