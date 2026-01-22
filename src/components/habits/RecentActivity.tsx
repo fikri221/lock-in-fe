@@ -5,14 +5,14 @@ import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface RecentActivityProps {
-  habitId: string;
-  logs: any[];
+  habitId?: string;
+  logs?: any[];
 }
 
-export default function RecentActivity({ habitId, logs }: RecentActivityProps) {
+export default function RecentActivity({}: RecentActivityProps) {
   const [showAll, setShowAll] = useState(false);
 
-  // Mock data for demo - replace with real logs
+  // Mock data for demo - keep using mock data as requested, just styled better
   const mockLogs = [
     {
       id: "1",
@@ -86,88 +86,90 @@ export default function RecentActivity({ habitId, logs }: RecentActivityProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
-        <span className="text-sm text-gray-500">
-          {mockLogs.length} total logs
+    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
+          <p className="text-sm text-gray-500 mt-1">Your latest check-ins</p>
+        </div>
+        <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-semibold text-gray-600">
+          {mockLogs.length} Entries
         </span>
       </div>
 
-      <div className="space-y-4">
+      <div className="relative border-l-2 border-gray-100 ml-4 space-y-8">
         {displayLogs.map((log) => (
-          <div
-            key={log.id}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              log.status === "completed"
-                ? "bg-green-50 border-green-200 hover:border-green-300"
-                : log.status === "skipped"
-                ? "bg-orange-50 border-orange-200 hover:border-orange-300"
-                : "bg-gray-50 border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-2">
-              <div>
+          <div key={log.id} className="relative pl-8">
+            {/* Timeline dot */}
+            <div
+              className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 border-white ring-1 ${
+                log.status === "completed"
+                  ? "bg-green-500 ring-green-100"
+                  : log.status === "skipped"
+                    ? "bg-orange-400 ring-orange-100"
+                    : "bg-gray-300 ring-gray-100"
+              }`}
+            />
+
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 group">
+              <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">
                   <span className="font-bold text-gray-900">
-                    {format(new Date(log.date), "MMMM dd, yyyy")}
+                    {format(new Date(log.date), "MMMM dd")}
                   </span>
                   {log.time && (
-                    <span className="text-sm text-gray-600">• {log.time}</span>
+                    <span className="text-sm text-gray-500 font-medium">
+                      {log.time}
+                    </span>
+                  )}
+                  {log.status === "skipped" && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700">
+                      Skipped
+                    </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`px-2 py-1 rounded-lg text-xs font-semibold ${
-                      log.status === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : log.status === "skipped"
-                        ? "bg-orange-100 text-orange-700"
-                        : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {log.status === "completed" ? "✓ Completed" : "✗ Skipped"}
-                  </span>
-                </div>
-              </div>
 
-              {log.weather && (
-                <div className="text-right text-sm">
-                  <div className="text-2xl mb-1">
-                    {getWeatherIcon(log.weather.condition)}
+                {log.notes && (
+                  <p className="text-gray-600 text-sm mb-3 bg-gray-50 p-3 rounded-xl rounded-tl-none inline-block">
+                    &quot;{log.notes}&quot;
+                  </p>
+                )}
+
+                {(log.mood || log.energy) && (
+                  <div className="flex items-center gap-4 text-sm">
+                    {log.mood && (
+                      <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+                        <span>Mood:</span>
+                        <span className="text-base">
+                          {getMoodEmoji(log.mood)}
+                        </span>
+                      </div>
+                    )}
+                    {log.energy && (
+                      <div className="flex items-center gap-1.5 text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">
+                        <span>Energy:</span>
+                        <span className="text-amber-500 text-base">⚡</span>
+                        <span className="font-medium">{log.energy}/5</span>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-gray-600">{log.weather.temp}°C</span>
-                </div>
-              )}
+                )}
+              </div>
+
+              {/* Right side: Weather or Status Icon */}
+              <div className="flex items-center gap-3">
+                {log.weather && (
+                  <div className="text-center bg-blue-50/50 p-2 rounded-xl min-w-[60px]">
+                    <div className="text-xl">
+                      {getWeatherIcon(log.weather.condition)}
+                    </div>
+                    <div className="text-xs font-medium text-gray-600 mt-1">
+                      {log.weather.temp}°
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {/* Mood & Energy */}
-            {log.mood && log.energy && (
-              <div className="flex items-center gap-4 mb-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Mood:</span>
-                  <span className="text-lg">{getMoodEmoji(log.mood)}</span>
-                  <span className="font-medium text-gray-700">
-                    {log.mood}/5
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Energy:</span>
-                  <span className="text-lg">⚡</span>
-                  <span className="font-medium text-gray-700">
-                    {log.energy}/5
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Notes */}
-            {log.notes && (
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-sm text-gray-700 italic">{log.notes}</p>
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -176,17 +178,17 @@ export default function RecentActivity({ habitId, logs }: RecentActivityProps) {
       {mockLogs.length > 5 && (
         <button
           onClick={() => setShowAll(!showAll)}
-          className="w-full mt-4 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700 transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-8 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl font-medium text-gray-600 transition-colors flex items-center justify-center gap-2"
         >
           {showAll ? (
             <>
-              <ChevronUp className="w-5 h-5" />
+              <ChevronUp className="w-4 h-4" />
               Show Less
             </>
           ) : (
             <>
-              <ChevronDown className="w-5 h-5" />
-              View All History ({mockLogs.length} logs)
+              <ChevronDown className="w-4 h-4" />
+              View All History
             </>
           )}
         </button>
