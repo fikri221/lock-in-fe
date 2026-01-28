@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { LogCompletion } from "@/types/habits";
 
 interface RecentActivityProps {
   habitId?: string;
-  logs?: any[];
+  logs?: LogCompletion[];
 }
 
 export default function RecentActivity({}: RecentActivityProps) {

@@ -80,3 +80,37 @@ export interface LogCompletion {
   actualValue?: number;
   createdAt?: string;
 }
+
+// Chart Data Types
+export interface TargetChartData {
+  today: { actual: number; target: number };
+  week: { actual: number; target: number };
+  month: { actual: number; target: number };
+  quarter: { actual: number; target: number };
+  year: { actual: number; target: number };
+}
+
+export interface ScoreDataPoint {
+  date: string;
+  label: string;
+  score: number;
+}
+
+export interface HistoryDataPoint {
+  date: string;
+  value: number;
+}
+
+export interface CalendarDataPoint {
+  date: string;
+  count?: number;
+  value: number;
+}
+
+export interface FrequencyDataPoint {
+  month: number; // 0-11
+  day: number; // 0-6
+  value: number;
+}
+
+export type ChartPeriod = "day" | "month" | "year";
