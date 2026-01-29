@@ -17,6 +17,7 @@ import {
   Check,
   LockKeyholeOpenIcon,
 } from "lucide-react";
+import { isAxiosError } from "@/utils/errorHandlers";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -89,7 +90,7 @@ export default function RegisterPage() {
       if (isAxiosError(error)) {
         toast.error(
           error.response?.data?.error ||
-            "Registration failed. Please try again."
+            "Registration failed. Please try again.",
         );
       } else if (error instanceof Error) {
         toast.error(error.message || "Registration failed. Please try again.");
@@ -100,13 +101,6 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
-
-  // Type guard for Axios errors
-  function isAxiosError(
-    error: unknown
-  ): error is { response?: { data?: { error?: string } } } {
-    return typeof error === "object" && error !== null && "response" in error;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">

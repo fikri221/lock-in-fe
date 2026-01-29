@@ -9,6 +9,7 @@ import {
   UpdateHabitRequest,
 } from "@/types/habits";
 import { toast } from "sonner";
+import { isAxiosError } from "@/utils/errorHandlers";
 
 export const useHabits = (
   dateOrRange: string | { startDate: string; endDate: string },
@@ -41,13 +42,6 @@ export const useHabits = (
       setLoading(false);
     }
   }, [dateOrRange]);
-
-  // Type guard for Axios errors
-  function isAxiosError(
-    error: unknown,
-  ): error is { response?: { data?: { error?: string } } } {
-    return typeof error === "object" && error !== null && "response" in error;
-  }
 
   const createHabit = async (data: CreateHabitRequest) => {
     // Optimistic update

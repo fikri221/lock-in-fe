@@ -88,6 +88,7 @@ export interface TargetChartData {
   month: { actual: number; target: number };
   quarter: { actual: number; target: number };
   year: { actual: number; target: number };
+  unit: string;
 }
 
 export interface ScoreDataPoint {

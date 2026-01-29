@@ -14,7 +14,7 @@ export const chartsApi = {
    */
   getTargetChart: async (habitId: string): Promise<TargetChartData> => {
     const response = await api.get(`/habits/${habitId}/charts/target`);
-    return response.data.data;
+    return { ...response.data.data, unit: response.data.unit };
   },
 
   /**

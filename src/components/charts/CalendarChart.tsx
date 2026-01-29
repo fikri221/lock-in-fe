@@ -12,6 +12,7 @@ import {
 import ChartCard from "./ChartCard";
 import { chartsApi } from "@/lib/api/chartsApi";
 import { CalendarDataPoint } from "@/types/habits";
+import { isAxiosError } from "@/utils/errorHandlers";
 
 interface CalendarChartProps {
   habitId: string;
@@ -35,10 +36,14 @@ export default function CalendarChart({
         const chartData = await chartsApi.getCalendarChart(habitId, months);
         setData(chartData);
         setError(null);
-      } catch (err: any) {
-        setError(
-          err?.response?.data?.message || "Failed to load calendar data",
-        );
+      } catch (err: unknown) {
+        if (isAxiosError(err)) {
+          setError(err.response?.data?.error || "Failed to load calendar data");
+        } else if (err instanceof Error) {
+          setError(err.message || "Failed to load calendar data");
+        } else {
+          setError("Failed to load calendar data");
+        }
       } finally {
         setLoading(false);
       }

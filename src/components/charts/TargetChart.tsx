@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ChartCard from "./ChartCard";
 import { chartsApi } from "@/lib/api/chartsApi";
 import { TargetChartData } from "@/types/habits";
+import { isAxiosError } from "@/utils/errorHandlers";
 
 interface TargetChartProps {
   habitId: string;
@@ -19,10 +20,17 @@ export default function TargetChart({ habitId }: TargetChartProps) {
       try {
         setLoading(true);
         const chartData = await chartsApi.getTargetChart(habitId);
+        console.log("chartData: ", chartData);
         setData(chartData);
         setError(null);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Failed to load target data");
+      } catch (err: unknown) {
+        if (isAxiosError(err)) {
+          setError(err.response?.data?.error || "Failed to fetch habits");
+        } else if (err instanceof Error) {
+          setError(err.message || "Failed to fetch habits");
+        } else {
+          setError("Failed to fetch habits");
+        }
       } finally {
         setLoading(false);
       }
@@ -45,6 +53,8 @@ export default function TargetChart({ habitId }: TargetChartProps) {
     }
     return num.toString();
   };
+
+  console.log("data: ", data);
 
   return (
     <ChartCard
@@ -96,6 +106,7 @@ export default function TargetChart({ habitId }: TargetChartProps) {
                   <span className="text-gray-600">
                     {formatNumber(periodData.target)}
                   </span>
+                  <span className="text-gray-500 mx-1">{data.unit}</span>
                 </div>
               </div>
             );

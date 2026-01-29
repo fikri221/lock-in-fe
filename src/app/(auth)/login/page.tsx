@@ -14,6 +14,7 @@ import {
   Loader2,
   LockKeyholeIcon,
 } from "lucide-react";
+import { isAxiosError } from "@/utils/errorHandlers";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,11 +52,11 @@ export default function LoginPage() {
       if (isAxiosError(error)) {
         toast.error(
           error.response?.data?.error ||
-            "Login failed. Please check your credentials."
+            "Login failed. Please check your credentials.",
         );
       } else if (error instanceof Error) {
         toast.error(
-          "Login failed. Invalid email or password. Please try again."
+          "Login failed. Invalid email or password. Please try again.",
         );
       } else {
         toast.error("Login failed. Please try again later.");
@@ -64,13 +65,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  // Type guard for Axios errors
-  function isAxiosError(
-    error: unknown
-  ): error is { response?: { data?: { error?: string } } } {
-    return typeof error === "object" && error !== null && "response" in error;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
