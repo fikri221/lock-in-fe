@@ -20,7 +20,6 @@ export default function TargetChart({ habitId }: TargetChartProps) {
       try {
         setLoading(true);
         const chartData = await chartsApi.getTargetChart(habitId);
-        console.log("chartData: ", chartData);
         setData(chartData);
         setError(null);
       } catch (err: unknown) {
@@ -53,8 +52,6 @@ export default function TargetChart({ habitId }: TargetChartProps) {
     }
     return num.toString();
   };
-
-  console.log("data: ", data);
 
   return (
     <ChartCard
