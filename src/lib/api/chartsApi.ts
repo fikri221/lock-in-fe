@@ -3,7 +3,7 @@ import {
   TargetChartData,
   ScoreDataPoint,
   HistoryDataPoint,
-  CalendarDataPoint,
+  CalendarChartResponse,
   FrequencyDataPoint,
   ChartPeriod,
 } from "@/types/habits";
@@ -49,11 +49,11 @@ export const chartsApi = {
   getCalendarChart: async (
     habitId: string,
     months: number = 3,
-  ): Promise<CalendarDataPoint[]> => {
+  ): Promise<CalendarChartResponse> => {
     const response = await api.get(`/habits/${habitId}/charts/calendar`, {
       params: { months },
     });
-    return response.data.data;
+    return response.data;
   },
 
   /**

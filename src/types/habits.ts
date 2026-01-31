@@ -104,8 +104,14 @@ export interface HistoryDataPoint {
 
 export interface CalendarDataPoint {
   date: string;
-  count?: number;
-  value: number;
+  status: LogCompletionType;
+  actualValue: number;
+}
+
+export interface CalendarChartResponse {
+  success: boolean;
+  data: CalendarDataPoint[];
+  targetValue: number;
 }
 
 export interface FrequencyDataPoint {
