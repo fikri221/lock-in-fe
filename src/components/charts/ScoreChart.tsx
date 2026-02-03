@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
   Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import ChartCard from "./ChartCard";
-import PeriodFilter from "./PeriodFilter";
+  Legend,
+  Title,
+  ChartOptions,
+} from "chart.js";
+import { Bubble } from "react-chartjs-2";
 import { chartsApi } from "@/lib/api/chartsApi";
 import { ScoreDataPoint, ChartPeriod } from "@/types/habits";
+import ChartCard from "./ChartCard";
+
+ChartJS.register(LinearScale, PointElement, Tooltip, Legend, Title);
 
 interface ScoreChartProps {
   habitId: string;
@@ -38,65 +40,108 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [habitId, period]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg">
-          <p className="font-semibold text-sm">{payload[0].payload.label}</p>
-          <p className="text-xs text-green-300 mt-1">
-            Score: {payload[0].value}%
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const chartData = useMemo(() => {
+    return {
+      datasets: [
+        {
+          label: "Score",
+          data: data.map((point) => ({
+            x: new Date(point.date).getTime(),
+            y: point.score,
+            r: 8, // Fixed radius for bubbles
+            rawDate: point.date, // Store original date for tooltip
+            label: point.label,
+          })),
+          backgroundColor: "rgba(34, 197, 94, 0.6)", // green-500 with opacity
+          borderColor: "rgba(34, 197, 94, 1)", // green-500
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [data]);
+
+  const options: ChartOptions<"bubble"> = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const raw = context.raw;
+              return `${raw.label || new Date(raw.x).toLocaleDateString()}: ${
+                raw.y
+              }%`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: "linear",
+          title: {
+            display: false,
+          },
+          ticks: {
+            callback: (value) => {
+              return new Date(value as number).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              });
+            },
+          },
+          grid: {
+            color: "rgba(0, 0, 0, 0.05)",
+          },
+        },
+        y: {
+          min: 0,
+          max: 100,
+          title: {
+            display: true,
+            text: "Score (%)",
+          },
+          grid: {
+            color: "rgba(0, 0, 0, 0.05)",
+          },
+        },
+      },
+    }),
+    [],
+  );
+
+  if (loading) {
+    return (
+      <div className="h-[320px] w-full flex items-center justify-center text-gray-400 text-sm">
+        Loading chart...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-[320px] w-full flex items-center justify-center text-red-500 text-sm">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <ChartCard
       title="Score"
-      subtitle="Achievement percentage over time"
+      subtitle="Your consistency score"
       loading={loading}
       error={error || undefined}
-      action={<PeriodFilter value={period} onChange={setPeriod} />}
     >
-      {data.length > 0 && (
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data}
-              margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                dataKey="label"
-                stroke="#9ca3af"
-                style={{ fontSize: "12px" }}
-              />
-              <YAxis
-                stroke="#9ca3af"
-                style={{ fontSize: "12px" }}
-                domain={[0, 100]}
-                ticks={[0, 20, 40, 60, 80, 100]}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ fill: "#10b981", r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      <div className="h-[320px] w-full p-4">
+        <Bubble data={chartData} options={options} />
+      </div>
     </ChartCard>
   );
 }
