@@ -9,13 +9,24 @@ import {
   Legend,
   Title,
   ChartOptions,
+  TooltipItem,
+  LineElement,
 } from "chart.js";
-import { Bubble } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import { chartsApi } from "@/lib/api/chartsApi";
 import { ScoreDataPoint, ChartPeriod } from "@/types/habits";
 import ChartCard from "./ChartCard";
+import PeriodFilter from "./PeriodFilter";
+import { isAxiosError } from "@/utils/errorHandlers";
 
-ChartJS.register(LinearScale, PointElement, Tooltip, Legend, Title);
+ChartJS.register(
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  Title,
+);
 
 interface ScoreChartProps {
   habitId: string;
@@ -34,8 +45,14 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
         const chartData = await chartsApi.getScoreChart(habitId, period);
         setData(chartData);
         setError(null);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Failed to load score data");
+      } catch (err: unknown) {
+        if (isAxiosError(err)) {
+          setError(err.response?.data?.error || "Failed to fetch habits");
+        } else if (err instanceof Error) {
+          setError(err.message || "Failed to fetch habits");
+        } else {
+          setError("Failed to fetch habits");
+        }
       } finally {
         setLoading(false);
       }
@@ -51,30 +68,34 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
           data: data.map((point) => ({
             x: new Date(point.date).getTime(),
             y: point.score,
-            r: 8, // Fixed radius for bubbles
-            rawDate: point.date, // Store original date for tooltip
             label: point.label,
           })),
-          backgroundColor: "rgba(34, 197, 94, 0.6)", // green-500 with opacity
+          backgroundColor: "rgba(34, 197, 94, 0.2)",
           borderColor: "rgba(34, 197, 94, 1)", // green-500
-          borderWidth: 1,
+          borderWidth: 2,
+          tension: 0.1,
+          fill: true,
         },
       ],
     };
   }, [data]);
 
-  const options: ChartOptions<"bubble"> = useMemo(
+  const options: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false,
+          position: "top",
         },
         tooltip: {
           callbacks: {
-            label: (context: any) => {
-              const raw = context.raw;
+            label: (context: TooltipItem<"line">) => {
+              const raw = context.raw as {
+                x: number;
+                y: number;
+                label?: string;
+              };
               return `${raw.label || new Date(raw.x).toLocaleDateString()}: ${
                 raw.y
               }%`;
@@ -135,12 +156,13 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
   return (
     <ChartCard
       title="Score"
-      subtitle="Your consistency score"
+      subtitle="Achievement percentage over time"
       loading={loading}
       error={error || undefined}
+      action={<PeriodFilter value={period} onChange={setPeriod} />}
     >
-      <div className="h-[320px] w-full p-4">
-        <Bubble data={chartData} options={options} />
+      <div className="h-[220px] sm:h-[280px] w-full">
+        <Line data={chartData} options={options} />
       </div>
     </ChartCard>
   );

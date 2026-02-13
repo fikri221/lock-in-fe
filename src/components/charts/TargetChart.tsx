@@ -70,7 +70,7 @@ export default function TargetChart({ habitId }: TargetChartProps) {
                 : 0;
 
             return (
-              <div key={key} className="flex items-center gap-4">
+              <div key={key} className="flex items-center sm:gap-4">
                 {/* Label */}
                 <div className="w-20 text-sm font-medium text-gray-700">
                   {label}
@@ -83,19 +83,28 @@ export default function TargetChart({ habitId }: TargetChartProps) {
                     style={{ width: `${percentage}%` }}
                   />
                   {/* Value Label inside bar */}
-                  <div className="absolute inset-0 flex items-center px-4 text-sm font-bold">
+                  <div className="absolute inset-0 flex items-center px-4 text-sm">
                     <span
                       className={
-                        percentage > 10 ? "text-white" : "text-gray-700"
+                        percentage > 10
+                          ? "text-white font-bold"
+                          : "text-gray-700 font-bold"
                       }
                     >
                       {periodData.actual}
                     </span>
+                    <div className="md:hidden">
+                      <span className="text-gray-500 mx-1">/</span>
+                      <span className="text-gray-600">
+                        {formatNumber(periodData.target)}
+                      </span>
+                      <span className="text-gray-500 mx-1">{data.unit}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Target Value */}
-                <div className="w-24 text-right text-sm">
+                <div className="hidden md:block w-24 text-right text-sm">
                   <span className="font-bold text-gray-900">
                     {formatNumber(periodData.actual)}
                   </span>
