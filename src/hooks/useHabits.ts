@@ -62,7 +62,7 @@ export const useHabits = (
       setHabits((prev) =>
         prev.map((h) => (h.id === "" ? response.data.habit : h)),
       );
-      toast.success("Habit created successfully!");
+      // toast.success("Habit created successfully!");
       return response.data.habit;
     } catch (err: unknown) {
       // Rollback
@@ -84,7 +84,7 @@ export const useHabits = (
     setHabits((prev) => prev.map((h) => (h.id === id ? { ...h, ...data } : h)));
     try {
       const response = await habitsAPI.updateHabit(id, data);
-      toast.success("Habit updated successfully!");
+      // toast.success("Habit updated successfully!");
       return response.data.habit;
     } catch (err: unknown) {
       // Rollback
@@ -128,15 +128,47 @@ export const useHabits = (
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id === id) {
-          const optimisticLog = {
-            ...logCompletion,
-            status: LogCompletionType.COMPLETED,
-          };
+          const logDate = new Date(logCompletion.logDate || new Date());
+          const existingLogIndex = (h.logs || []).findIndex(
+            (l) =>
+              new Date(l.logDate || l.createdAt || "").toDateString() ===
+              logDate.toDateString(),
+          );
+
+          const newLogs = [...(h.logs || [])];
+          let currentStreak = h.currentStreak;
+          let totalCompletions = h.totalCompletions;
+
+          if (existingLogIndex >= 0) {
+            // Update existing log
+            const oldStatus = newLogs[existingLogIndex].status;
+            newLogs[existingLogIndex] = {
+              ...newLogs[existingLogIndex],
+              ...logCompletion,
+              status: LogCompletionType.COMPLETED,
+            };
+
+            // If it wasn't completed before, increment stats
+            if (oldStatus !== LogCompletionType.COMPLETED) {
+              currentStreak += 1;
+              totalCompletions += 1;
+            }
+          } else {
+            // Add new log
+            newLogs.push({
+              ...logCompletion,
+              status: LogCompletionType.COMPLETED,
+              createdAt: new Date().toISOString(),
+            });
+            currentStreak += 1;
+            totalCompletions += 1;
+          }
+
           return {
             ...h,
-            currentStreak: h.currentStreak + 1,
-            totalCompletions: h.totalCompletions + 1,
-            logs: [...(h.logs || []), optimisticLog],
+            currentStreak,
+            totalCompletions,
+            logs: newLogs,
             lastCompleted: new Date().toISOString(),
           };
         }
@@ -152,16 +184,21 @@ export const useHabits = (
       setHabits((prev) =>
         prev.map((h) => {
           if (h.id === id) {
-            return {
-              ...h,
-              logs: [...(h.logs || []).slice(0, -1), newLog],
-            };
+            const logDate = new Date(logCompletion.logDate || new Date());
+            // Replace the log for this date with the real one from server
+            const newLogs = (h.logs || []).map((l) =>
+              new Date(l.logDate || l.createdAt || "").toDateString() ===
+              logDate.toDateString()
+                ? newLog
+                : l,
+            );
+            return { ...h, logs: newLogs };
           }
           return h;
         }),
       );
 
-      toast.success("Habit completed! 🎉");
+      // toast.success("Habit completed! 🎉");
       return newLog;
     } catch (err: unknown) {
       // Rollback
@@ -184,37 +221,34 @@ export const useHabits = (
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id === id) {
-          const optimisticLog = {
-            ...logCompletion,
-          };
+          const logDate = new Date(logCompletion.logDate || new Date());
+          const existingLogIndex = (h.logs || []).findIndex(
+            (l) =>
+              new Date(l.logDate || l.createdAt || "").toDateString() ===
+              logDate.toDateString(),
+          );
 
+          const newLogs = [...(h.logs || [])];
           let currentStreak = h.currentStreak;
           let totalCompletions = h.totalCompletions;
 
-          // Check if the habit was completed
-          const wasCompleted = h.logs?.some(
-            (l) => l.status === LogCompletionType.COMPLETED,
-          );
-
-          // If the habit was completed, decrement the streak and total completions
-          if (wasCompleted) {
-            currentStreak = Math.max(0, currentStreak - 1);
-            totalCompletions = Math.max(0, totalCompletions - 1);
+          if (existingLogIndex >= 0) {
+            const oldStatus = newLogs[existingLogIndex].status;
+            // If we are cancelling a completed habit
+            if (oldStatus === LogCompletionType.COMPLETED) {
+              currentStreak = Math.max(0, currentStreak - 1);
+              totalCompletions = Math.max(0, totalCompletions - 1);
+            }
+            // Remove the log effectively (or mark as cancelled if you persist history)
+            // For now, let's remove it from the list to show "unchecked" state
+            newLogs.splice(existingLogIndex, 1);
           }
 
           return {
             ...h,
             currentStreak,
             totalCompletions,
-            logs: [
-              ...(h.logs || []).filter(
-                (l) =>
-                  // Remove completed and skipped logs
-                  l.status !== LogCompletionType.COMPLETED &&
-                  l.status !== LogCompletionType.SKIPPED,
-              ),
-              optimisticLog,
-            ],
+            logs: newLogs,
           };
         }
         return h;
@@ -226,13 +260,17 @@ export const useHabits = (
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
+      // Sync with server data
       setHabits((prev) =>
         prev.map((h) => {
           if (h.id === id) {
-            return {
-              ...h,
-              logs: [...(h.logs || []).slice(0, -1), newLog],
-            };
+            // If server returns a cancelled log, we might want to keep it or just ensure
+            // the local state reflects "no completion".
+            // If we removed it optimistically, we might not need to do anything
+            // unless the server says "actually it failed to cancel".
+            // But if the server returns a "Cancelled" log, we can insert it if needed.
+            // For now, ensuring it's not in the list is enough for UI "unchecked".
+            return h;
           }
           return h;
         }),
@@ -259,13 +297,43 @@ export const useHabits = (
     setHabits((prev) =>
       prev.map((h) => {
         if (h.id === id) {
+          const logDate = new Date(logCompletion.logDate || new Date());
+          const existingLogIndex = (h.logs || []).findIndex(
+            (l) =>
+              new Date(l.logDate || l.createdAt || "").toDateString() ===
+              logDate.toDateString(),
+          );
+
+          const newLogs = [...(h.logs || [])];
+          let currentStreak = h.currentStreak;
+          let totalCompletions = h.totalCompletions;
+
           const optimisticLog = {
             ...logCompletion,
             status: LogCompletionType.SKIPPED,
+            createdAt: new Date().toISOString(),
           };
+
+          if (existingLogIndex >= 0) {
+            const oldStatus = newLogs[existingLogIndex].status;
+            // If it was completed before, decrement stats
+            if (oldStatus === LogCompletionType.COMPLETED) {
+              currentStreak = Math.max(0, currentStreak - 1);
+              totalCompletions = Math.max(0, totalCompletions - 1);
+            }
+            newLogs[existingLogIndex] = {
+              ...newLogs[existingLogIndex],
+              ...optimisticLog,
+            };
+          } else {
+            newLogs.push(optimisticLog);
+          }
+
           return {
             ...h,
-            logs: [...(h.logs || []), optimisticLog],
+            currentStreak,
+            totalCompletions,
+            logs: newLogs,
           };
         }
         return h;
@@ -280,13 +348,18 @@ export const useHabits = (
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
+      // Sync with server data
       setHabits((prev) =>
         prev.map((h) => {
           if (h.id === id) {
-            return {
-              ...h,
-              logs: [...(h.logs || []).slice(0, -1), newLog],
-            };
+            const logDate = new Date(logCompletion.logDate || new Date());
+            const newLogs = (h.logs || []).map((l) =>
+              new Date(l.logDate || l.createdAt || "").toDateString() ===
+              logDate.toDateString()
+                ? newLog
+                : l,
+            );
+            return { ...h, logs: newLogs };
           }
           return h;
         }),
