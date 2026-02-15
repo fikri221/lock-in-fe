@@ -227,7 +227,7 @@ export function MeasurableCard({
             navigator.vibrate(50);
           }
         }
-      }, 500);
+      }, 1000);
 
       // Value Drag Logic
       if (expanded) return;
@@ -361,10 +361,12 @@ export function MeasurableCard({
       <motion.div
         ref={cardRef}
         style={{ x, y, scale, rotate, opacity, zIndex: isDragMode ? 50 : 1 }}
-        drag={isDragMode}
-        dragListener={isDragMode}
-        dragConstraints={isDragMode ? undefined : { left: 0, right: 0 }}
-        dragElastic={0.7}
+        drag={true}
+        dragListener={true}
+        dragConstraints={
+          isDragMode ? undefined : { left: 0, right: 0, top: 0, bottom: 0 }
+        }
+        dragElastic={isDragMode ? 0.5 : 0}
         onDragEnd={handleDragEnd}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}

@@ -142,7 +142,7 @@ export function BooleanCard({
           navigator.vibrate(50);
         }
       }
-    }, 500); // 500ms long press
+    }, 1000); // 1000ms long press
   };
 
   const handlePointerUp = () => {
@@ -238,9 +238,17 @@ export function BooleanCard({
           backgroundColor: phase === "idle" ? bg : undefined,
           zIndex: isDragMode ? 50 : 1, // Bring to front when dragging
         }}
-        drag={isDragMode ? true : isDraggable ? "x" : false}
-        dragConstraints={isDragMode ? undefined : { left: 0, right: 0 }}
-        dragElastic={0.7}
+        drag={isDraggable}
+        dragConstraints={
+          isDragMode ? undefined : { top: 0, bottom: 0, left: 0, right: 0 } // Constrain Y strictly, X elastically via dragElastic?
+          // Wait, if I want X to be free for swipe, I should have only top/bottom constraints?
+          // But looking at original code: dragConstraints={... { left: 0, right: 0 }}
+          // Previous code had left/right: 0. This implies it relied on elasticity for swiping.
+          // So I should keep it comparable.
+        }
+        dragElastic={
+          isDragMode ? 0.5 : { top: 0.05, bottom: 0.05, left: 0.7, right: 0.7 }
+        }
         onDragStart={() => setSwiping(true)}
         onDragEnd={handleDragEnd}
         onPointerDown={handlePointerDown}

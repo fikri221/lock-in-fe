@@ -34,6 +34,15 @@ export default function Dashboard() {
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
+  /* ─── Drag to Delete State ─── */
+  const handleDragToggle = useCallback((id: string, isDragging: boolean) => {
+    setDraggingId((prev) => {
+      if (isDragging) return id;
+      if (prev === id) return null;
+      return prev;
+    });
+  }, []);
+
   const { isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
   const {
     habits,
@@ -115,10 +124,13 @@ export default function Dashboard() {
   };
 
   const handleDeleteHabit = async (habitId: string) => {
-    try {
-      await deleteHabit(habitId);
-    } catch (error) {
-      console.error("Error deleting habit:", error);
+    setDraggingId(null);
+    if (confirm("Are you sure you want to delete this habit?")) {
+      try {
+        await deleteHabit(habitId);
+      } catch (error) {
+        console.error("Error deleting habit:", error);
+      }
     }
   };
 
@@ -247,7 +259,7 @@ export default function Dashboard() {
                     }
                     onDelete={() => handleDeleteHabit(habit.id)}
                     onDragToggle={(isDragging) =>
-                      setDraggingId(isDragging ? habit.id : null)
+                      handleDragToggle(habit.id, isDragging)
                     }
                   />
                 ) : (
@@ -262,7 +274,7 @@ export default function Dashboard() {
                     }
                     onDelete={() => handleDeleteHabit(habit.id)}
                     onDragToggle={(isDragging) =>
-                      setDraggingId(isDragging ? habit.id : null)
+                      handleDragToggle(habit.id, isDragging)
                     }
                   />
                 )}
