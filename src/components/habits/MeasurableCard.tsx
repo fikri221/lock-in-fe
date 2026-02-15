@@ -295,7 +295,10 @@ export function MeasurableCard({
 
     if (!dragging) return;
     if (hasDraggedRef.current) {
-      onSetValue({ actualValue: liveValue });
+      // Only update if value actually changed
+      if (liveValue !== startValueRef.current) {
+        onSetValue({ actualValue: liveValue });
+      }
       if (liveValue >= maxValue) {
         spawnPetals();
       }
