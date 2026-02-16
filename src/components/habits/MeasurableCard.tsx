@@ -154,7 +154,7 @@ export function MeasurableCard({
 
   useEffect(() => {
     if (!dragging) {
-      animate(fillPct, (currentValue / maxValue) * 100, {
+      animate(fillPct, Math.min(100, (currentValue / maxValue) * 100), {
         type: "spring",
         stiffness: 120,
         damping: 20,
@@ -170,9 +170,9 @@ export function MeasurableCard({
   const snapToStep = useCallback(
     (raw: number) => {
       const snapped = Math.round(raw / step) * step;
-      return Math.max(0, Math.min(maxValue, snapped));
+      return Math.max(0, snapped);
     },
-    [maxValue, step],
+    [step],
   );
 
   /* ─── Spawn leaf ─── */
@@ -277,7 +277,7 @@ export function MeasurableCard({
       }
 
       setLiveValue(val);
-      fillPct.set((val / maxValue) * 100);
+      fillPct.set(Math.min(100, (val / maxValue) * 100));
     },
     [dragging, maxValue, snapToStep, fillPct, spawnLeaf, isDragMode],
   );
@@ -341,11 +341,11 @@ export function MeasurableCard({
 
   function adjustValue(delta: number) {
     if (isDragMode) return;
-    const newVal = Math.max(0, Math.min(maxValue, currentValue + delta));
+    const newVal = Math.max(0, currentValue + delta);
     onSetValue({ actualValue: newVal });
     setLiveValue(newVal);
     if (delta > 0) {
-      spawnLeaf((newVal / maxValue) * 100);
+      spawnLeaf(Math.min(100, (newVal / maxValue) * 100));
     }
     if (newVal >= maxValue) {
       spawnPetals();

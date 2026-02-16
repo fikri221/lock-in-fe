@@ -30,7 +30,6 @@ export function BooleanCard({
   const opacity = useMotionValue(1);
   const cardRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<CardPhase>("idle");
-  const [swiping, setSwiping] = useState(false);
   const [isDragMode, setIsDragMode] = useState(false);
 
   // Long press refs
@@ -125,7 +124,6 @@ export function BooleanCard({
 
       setTimeout(() => {
         setPhase("idle");
-        setSwiping(false);
       }, 800);
     });
   }
@@ -152,11 +150,11 @@ export function BooleanCard({
     }
   };
 
-  const handlePointerMove = () => {
-    // If moved significantly before timer, cancel timer?
-    // For now, let's rely on framer motion drag to handle movement
-    // But if we want to cancel long press on scroll, we might need logic here
-  };
+  // const handlePointerMove = () => {
+  //   // If moved significantly before timer, cancel timer?
+  //   // For now, let's rely on framer motion drag to handle movement
+  //   // But if we want to cancel long press on scroll, we might need logic here
+  // };
 
   function handleDragEnd(
     _: unknown,
@@ -201,7 +199,6 @@ export function BooleanCard({
       triggerFlyAndDrop("left", onSkip);
     } else {
       animate(x, 0, { type: "spring", stiffness: 500, damping: 30 });
-      setTimeout(() => setSwiping(false), 300);
     }
   }
 
@@ -249,12 +246,11 @@ export function BooleanCard({
         dragElastic={
           isDragMode ? 0.5 : { top: 0.05, bottom: 0.05, left: 0.7, right: 0.7 }
         }
-        onDragStart={() => setSwiping(true)}
         onDragEnd={handleDragEnd}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
+        whileTap={isDraggable && !isDragMode ? { scale: 1 } : undefined}
         className={`relative flex cursor-grab select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${
           isDone
             ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"

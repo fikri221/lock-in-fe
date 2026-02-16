@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Loader2,
-  LockKeyholeIcon,
-} from "lucide-react";
+import { Eye, EyeOff, Loader2, LockKeyholeIcon } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
 
 export default function LoginPage() {
@@ -67,162 +59,123 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-      {/* Background Decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400 rounded-full opacity-20 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400 rounded-full opacity-20 blur-3xl" />
-      </div>
-
-      <div className="w-full max-w-md relative">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 transition-colors">
+      <div className="w-full max-w-sm">
         {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mb-4">
-            <LockKeyholeIcon className="w-9 h-9 text-white" />
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-zinc-900 dark:bg-zinc-100 rounded-xl shadow-sm mb-6">
+            <LockKeyholeIcon className="w-6 h-6 text-white dark:text-zinc-900" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome Back
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            Welcome back
           </h1>
-          <p className="text-gray-600">
-            Login to continue building better habits
+          <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">
+            Enter your credentials to access your account
           </p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 backdrop-blur-sm border border-gray-100">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email Field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
+              Email
+            </label>
+            <div className="relative group">
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 text-sm"
+                placeholder="name@example.com"
+                required
+              />
             </div>
+          </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-              </label>
+          {/* Password Field */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 ml-1">
+              Password
+            </label>
+            <div className="relative group">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="w-full px-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 focus:border-transparent outline-none transition-all placeholder:text-zinc-400 text-sm pr-10"
+                placeholder="••••••••"
+                required
+              />
               <button
                 type="button"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors p-1"
               >
-                Forgot password?
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
+          </div>
 
-            {/* Submit Button */}
+          {/* Remember & Forgot */}
+          <div className="flex items-center justify-between text-xs pt-1">
+            <label className="flex items-center gap-2 cursor-pointer text-zinc-600 dark:text-zinc-400 select-none">
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 bg-transparent"
+              />
+              Remember me
+            </label>
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              type="button"
+              className="font-medium text-zinc-900 dark:text-zinc-100 hover:underline"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Logging in...
-                </>
-              ) : (
-                <>
-                  Login
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
+              Forgot password?
             </button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">or</span>
-            </div>
           </div>
 
-          {/* Demo Account */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Try Demo Account:
-            </p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p>
-                <span className="font-semibold">Email:</span> laz@mail.com
-              </p>
-              <p>
-                <span className="font-semibold">Password:</span> 12345678
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sign Up Link */}
-        <p className="text-center mt-6 text-gray-600">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-2 text-sm shadow-sm"
           >
-            Sign up for free
-          </Link>
-        </p>
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              "Sign in"
+            )}
+          </button>
+        </form>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>By continuing, you agree to our Terms & Privacy Policy</p>
+        <div className="mt-8 text-center space-y-4">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-zinc-900 dark:text-zinc-100 hover:underline decoration-zinc-900/20 underline-offset-4"
+            >
+              Create account
+            </Link>
+          </p>
+
+          {/* Demo Account (Optional styling update) */}
+          <div className="text-xs text-zinc-400 dark:text-zinc-600 bg-zinc-100 dark:bg-zinc-900/50 py-3 px-4 rounded-lg inline-block text-left mx-auto border border-zinc-200 dark:border-zinc-800">
+            <div className="font-medium mb-1 text-zinc-500">Demo Account:</div>
+            <div className="font-mono">laz@mail.com / 12345678</div>
+          </div>
         </div>
       </div>
     </div>
