@@ -3,6 +3,7 @@
 import { Habit, LogCompletion } from "@/types/habits";
 import { useMotionValue, useTransform, motion, animate } from "framer-motion";
 import { useRef, useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 /* ─── Leaf type ─── */
 interface Leaf {
@@ -118,6 +119,12 @@ export function MeasurableCard({
 
   const fillPct = useMotionValue(0);
   const fillWidthStr = useTransform(fillPct, (v) => `${v}%`);
+
+  const router = useRouter();
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card expansion if any
+    router.push(`/habits/${habit.id}`);
+  };
 
   useEffect(() => {
     onDragToggle?.(isDragMode);
@@ -405,10 +412,20 @@ export function MeasurableCard({
 
         {/* Content Row */}
         <div className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4">
-          <span className="text-2xl sm:text-3xl shrink-0">{habit.icon}</span>
+          <span
+            onClick={handleHeaderClick}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="text-2xl sm:text-3xl shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all"
+          >
+            {habit.icon}
+          </span>
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-center mr-1">
-              <p className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+              <p
+                onClick={handleHeaderClick}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate cursor-pointer hover:underline"
+              >
                 {habit.name}
               </p>
               <div className="flex items-baseline gap-1">
