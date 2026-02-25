@@ -1,4 +1,4 @@
-// frontend/src/app/habits/[id]/page.tsx
+// frontend/src/app/(dashboard)/habits/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -10,23 +10,14 @@ import {
   Trash2,
   Download,
   MoreVertical,
-  Target,
   Flame,
-  TrendingUp,
-  Award,
   Clock,
-  X,
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useHabits } from "@/hooks/useHabits";
-// import HabitChart from "@/components/habits/HabitChart";
-// import HabitHeatmap from "@/components/habits/HabitHeatmap";
-import GoalProgress from "@/components/habits/GoalProgress";
-import RecentActivity from "@/components/habits/RecentActivity";
 import { LogCompletion, LogCompletionType } from "@/types/habits";
-
-// type TimeRange = "7" | "30" | "90" | "all";
+import { HabitCharts } from "@/components/charts";
 
 export default function HabitDetailPage() {
   const router = useRouter();
@@ -35,13 +26,13 @@ export default function HabitDetailPage() {
 
   const { habits, loading, deleteHabit, updateHabit, completeHabit } =
     useHabits(new Date().toDateString());
+
   // Derive habit directly instead of using local state to avoid infinite loops
   const habit = useMemo(
     () => habits.find((h) => h.id === habitId),
     [habits, habitId],
   );
 
-  // const [timeRange, setTimeRange] = useState<TimeRange>("7");
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
@@ -126,375 +117,337 @@ export default function HabitDetailPage() {
 
   if (loading || !habit) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 font-medium">Loading habit details...</p>
+          <div className="w-10 h-10 border-4 border-zinc-300 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+            Loading details...
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Hero Header with Glassmorphism */}
-      <div className="relative overflow-hidden bg-white border-b border-gray-200">
-        {/* Background Decorative Blobs */}
-        <div
-          className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full blur-3xl opacity-20 pointer-events-none"
-          style={{ backgroundColor: habit.color || "#3b82f6" }}
-        />
-        <div
-          className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full blur-3xl opacity-10 pointer-events-none"
-          style={{ backgroundColor: habit.color || "#3b82f6" }}
-        />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 relative z-10">
-          {/* Navigation */}
+    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
+      {/* Header */}
+      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 px-3 sm:px-4 py-3 sm:py-4 backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950/80">
+        <div className="mx-auto max-w-lg flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-8 transition-colors group"
+            className="flex items-center gap-2 p-1.5 -ml-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
           >
-            <div className="p-2 rounded-full bg-white border border-gray-200 group-hover:border-gray-300 shadow-sm transition-all">
-              <ArrowLeft className="w-4 h-4" />
-            </div>
-            <span className="font-medium">Back to Dashboard</span>
+            <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            {/* Habit Identity */}
-            <div className="flex items-center gap-6">
-              <div
-                className="w-24 h-24 rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-gray-200 transform transition-transform hover:scale-105 duration-300"
-                style={{
-                  backgroundColor: habit.color + "20",
-                  border: `4px solid ${habit.color}`,
-                  color: habit.color,
-                }}
-              >
-                {habit.icon}
-              </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`p-2 rounded-full transition-colors ${
+                isEditing
+                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+                  : "hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-300"
+              }`}
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
 
-              <div>
-                {isEditing ? (
-                  <div className="space-y-4 min-w-[300px] bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-100">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editedName}
-                        onChange={(e) => setEditedName(e.target.value)}
-                        className="text-xl font-bold text-gray-900 border-2 border-blue-100 focus:border-blue-500 rounded-xl px-4 py-2 w-full transition-all bg-gray-50 focus:bg-white"
-                        placeholder="Habit name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        value={editedDescription}
-                        onChange={(e) => setEditedDescription(e.target.value)}
-                        className="text-sm text-gray-600 border-2 border-blue-100 focus:border-blue-500 rounded-xl px-4 py-2 w-full transition-all bg-gray-50 focus:bg-white resize-none"
-                        placeholder="Why do you want to build this habit?"
-                        rows={2}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                        Time
-                      </label>
-                      <div className="flex items-center gap-2 bg-gray-50 border-2 border-blue-100 rounded-xl px-4 py-2 focus-within:border-blue-500 focus-within:bg-white transition-all">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <input
-                          type="time"
-                          value={editedTime}
-                          onChange={(e) => setEditedTime(e.target.value)}
-                          className="bg-transparent border-none focus:ring-0 w-full p-0 text-gray-700"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex gap-3 pt-2">
-                      <button
-                        onClick={handleSaveEdit}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0"
-                      >
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setEditedName(habit.name);
-                          setEditedDescription(habit.description || "");
-                          setEditedTime(
-                            habit.scheduledTime?.slice(0, 5) || undefined,
-                          );
-                        }}
-                        className="p-2.5 border-2 border-gray-200 rounded-xl hover:bg-gray-100 transition-colors text-gray-500 hover:text-gray-700"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 py-1 z-30 overflow-hidden text-sm font-medium">
+                    <button
+                      onClick={() => {
+                        handleExport();
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 flex items-center gap-3 text-zinc-700 dark:text-zinc-300 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleDelete();
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-3 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete Habit
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    <h1 className="text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
-                      {habit.name}
-                    </h1>
-                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                      <span className="px-3 py-1 bg-gray-100 border border-gray-200 rounded-full font-medium text-gray-700">
-                        {habit.category || "General"}
-                      </span>
-                      {habit.scheduledTime && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-700 font-medium">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{habit.scheduledTime?.slice(0, 5)}</span>
-                        </div>
-                      )}
-                      {habit.currentStreak > 0 && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-orange-50 border border-orange-100 rounded-full text-orange-700 font-medium animate-pulse-slow">
-                          <Flame className="w-3.5 h-3.5" />
-                          <span>{habit.currentStreak} Day Streak</span>
-                        </div>
-                      )}
-                    </div>
-                    {habit.description && (
-                      <p className="mt-4 text-lg text-gray-500 max-w-2xl leading-relaxed">
-                        {habit.description}
-                      </p>
-                    )}
-                  </>
-                )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="mx-auto w-full max-w-lg flex-1 px-3 sm:px-4 py-6 sm:py-8 relative">
+        {/* Habit Identity */}
+        <div className="flex flex-col items-center text-center mb-8">
+          {/* Identity Graphics */}
+          {!isEditing && habit.habitType === "measurable" ? (
+            <div className="relative mb-6">
+              {/* Circular Progress Bar */}
+              <svg className="w-36 h-36 transform -rotate-90">
+                <circle
+                  cx="72"
+                  cy="72"
+                  r="64"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  className="text-zinc-100 dark:text-zinc-800"
+                />
+                <circle
+                  cx="72"
+                  cy="72"
+                  r="64"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  fill="transparent"
+                  strokeDasharray={402} /* 2 * PI * r = ~402 for r=64 */
+                  strokeDashoffset={(() => {
+                    const maxVal = habit.targetValue || 1;
+                    const todayLog = habit.logs?.find(
+                      (l: LogCompletion) =>
+                        new Date(
+                          l.logDate || l.createdAt || "",
+                        ).toDateString() === new Date().toDateString(),
+                    );
+                    const actualValue = todayLog?.actualValue || 0;
+                    const progressPercent = Math.min(
+                      100,
+                      Math.max(0, (actualValue / maxVal) * 100),
+                    );
+                    return 402 - (progressPercent / 100) * 402;
+                  })()}
+                  strokeLinecap="round"
+                  className="text-emerald-500 transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-4xl mb-1">{habit.icon}</div>
+                <div className="text-xs font-bold text-zinc-500">
+                  {(() => {
+                    const todayLog = habit.logs?.find(
+                      (l) =>
+                        new Date(
+                          l.logDate || l.createdAt || "",
+                        ).toDateString() === new Date().toDateString(),
+                    );
+                    return todayLog?.actualValue || 0;
+                  })()}{" "}
+                  / {habit.targetValue || 0}
+                </div>
               </div>
             </div>
+          ) : (
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-sm"
+              style={{
+                backgroundColor: habit.color + "20",
+                color: habit.color,
+                border: `2px solid ${habit.color}40`,
+              }}
+            >
+              {habit.icon}
+            </div>
+          )}
 
-            {/* Main Action */}
-            {!isEditing && (
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-6 md:mt-0">
-                {!isCompleted ? (
-                  <button
-                    onClick={handleComplete}
-                    className="w-full sm:w-auto px-8 py-4 bg-gray-900 text-white rounded-2xl hover:bg-black transition-all shadow-xl hover:shadow-2xl shadow-gray-200 transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-3 group"
-                  >
-                    <div className="p-1 bg-white/20 rounded-full group-hover:bg-white/30 transition-colors">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-lg">Complete Today</span>
-                  </button>
-                ) : (
-                  <div className="w-full sm:w-auto px-8 py-4 bg-green-50 text-green-700 border border-green-200 rounded-2xl flex items-center justify-center gap-3 shadow-sm">
-                    <div className="p-1 bg-green-100 rounded-full">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <span className="font-bold text-lg">Completed!</span>
+          {isEditing ? (
+            <div className="w-full space-y-4 text-left bg-white dark:bg-zinc-900 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm mt-2">
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all sm:text-sm"
+                  placeholder="Habit name"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all sm:text-sm resize-none"
+                  placeholder="Why do you want to build this habit?"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1.5">
+                  Time
+                </label>
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-100 transition-all">
+                  <Clock className="w-4 h-4 text-zinc-400" />
+                  <input
+                    type="time"
+                    value={editedTime}
+                    onChange={(e) => setEditedTime(e.target.value)}
+                    className="w-full bg-transparent border-none focus:ring-0 p-0 text-zinc-900 dark:text-zinc-100 sm:text-sm"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 px-4 py-2.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors text-sm flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditedName(habit.name);
+                    setEditedDescription(habit.description || "");
+                    setEditedTime(
+                      habit.scheduledTime?.slice(0, 5) || undefined,
+                    );
+                  }}
+                  className="px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+                {habit.name}
+              </h1>
+              {habit.description && (
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-4 max-w-sm">
+                  {habit.description}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-medium">
+                <span className="px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-md">
+                  {habit.category || "General"}
+                </span>
+                {habit.scheduledTime && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 rounded-md">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{habit.scheduledTime?.slice(0, 5)}</span>
                   </div>
                 )}
-
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex-1 sm:flex-none py-4 px-4 border border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2"
-                    title="Edit Habit"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                    <span className="sm:hidden font-medium">Edit</span>
-                  </button>
-
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowMenu(!showMenu)}
-                      className="py-4 px-4 border border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-600 hover:text-gray-900 flex items-center justify-center"
-                    >
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-
-                    {showMenu && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-20"
-                          onClick={() => setShowMenu(false)}
-                        />
-                        <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 min-w-[180px] z-30 overflow-hidden text-sm font-medium">
-                          <button
-                            onClick={() => {
-                              handleExport();
-                              setShowMenu(false);
-                            }}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
-                          >
-                            <Download className="w-4 h-4" />
-                            Export CSV
-                          </button>
-                          <div className="h-px bg-gray-100 my-1" />
-                          <button
-                            onClick={() => {
-                              handleDelete();
-                              setShowMenu(false);
-                            }}
-                            className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Habit
-                          </button>
-                        </div>
-                      </>
-                    )}
+                {habit.currentStreak > 0 && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-900/50 rounded-md">
+                    <Flame className="w-3.5 h-3.5" />
+                    <span>{habit.currentStreak} Day Streak</span>
                   </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Main Action */}
+        {!isEditing && (
+          <div className="mb-8">
+            {habit.habitType === "measurable" ? (
+              <div className="flex items-center justify-center gap-6">
+                <button
+                  onClick={async () => {
+                    const todayLog = habit.logs?.find(
+                      (l: LogCompletion) =>
+                        new Date(
+                          l.logDate || l.createdAt || "",
+                        ).toDateString() === new Date().toDateString(),
+                    );
+                    const currentVal = todayLog?.actualValue || 0;
+                    const newVal = Math.max(0, currentVal - 1);
+                    if (newVal !== currentVal) {
+                      try {
+                        await completeHabit(habit.id, {
+                          status:
+                            newVal > 0
+                              ? LogCompletionType.COMPLETED
+                              : LogCompletionType.CANCELLED,
+                          actualValue: newVal,
+                          logDate: new Date(),
+                        });
+                      } catch (e) {
+                        console.error("Error decrementing habit:", e);
+                      }
+                    }
+                  }}
+                  className="w-16 h-16 flex items-center justify-center rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 text-3xl font-light hover:bg-zinc-50 dark:hover:bg-zinc-700 active:scale-95 transition-transform"
+                >
+                  -
+                </button>
+                <div className="text-center w-24">
+                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                    Adjust
+                  </span>
                 </div>
+                <button
+                  onClick={async () => {
+                    const todayLog = habit.logs?.find(
+                      (l: LogCompletion) =>
+                        new Date(
+                          l.logDate || l.createdAt || "",
+                        ).toDateString() === new Date().toDateString(),
+                    );
+                    const currentVal = todayLog?.actualValue || 0;
+                    const newVal = Math.max(0, currentVal + 1);
+                    try {
+                      await completeHabit(habit.id, {
+                        status: LogCompletionType.COMPLETED,
+                        actualValue: newVal,
+                        logDate: new Date(),
+                      });
+                    } catch (e) {
+                      console.error("Error incrementing habit:", e);
+                    }
+                  }}
+                  className="w-16 h-16 flex items-center justify-center rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 shadow-sm text-3xl font-light hover:bg-zinc-800 dark:hover:bg-zinc-200 active:scale-95 transition-transform"
+                >
+                  +
+                </button>
+              </div>
+            ) : !isCompleted ? (
+              <button
+                onClick={handleComplete}
+                className="w-full py-3.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
+              >
+                <Check className="w-5 h-5" />
+                Complete Today
+              </button>
+            ) : (
+              <div className="w-full py-3.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 rounded-xl font-medium flex items-center justify-center gap-2 border border-zinc-200 dark:border-zinc-800">
+                <Check className="w-5 h-5" />
+                Completed!
               </div>
             )}
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <StatCard
-            icon={<Flame className="w-6 h-6 text-orange-500" />}
-            label="Current Streak"
-            value={habit.currentStreak}
-            suffix="days"
-            bg="bg-orange-50"
-            border="border-orange-100"
-          />
-          <StatCard
-            icon={<Target className="w-6 h-6 text-blue-500" />}
-            label="Total Completions"
-            value={habit.totalCompletions}
-            suffix="times"
-            bg="bg-blue-50"
-            border="border-blue-100"
-          />
-          <StatCard
-            icon={<TrendingUp className="w-6 h-6 text-emerald-500" />}
-            label="Completion Rate"
-            value={80} // Mock calculation for now
-            suffix="%"
-            bg="bg-emerald-50"
-            border="border-emerald-100"
-          />
-          <StatCard
-            icon={<Award className="w-6 h-6 text-purple-500" />}
-            label="Best Streak"
-            value={habit.longestStreak}
-            suffix="days"
-            bg="bg-purple-50"
-            border="border-purple-100"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Progress & Activity */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Goal Progress */}
-            <GoalProgress habitId={habitId} />
-
-            {/* Heatmap (Coming Soon/Chart Placeholder) */}
-            {/* <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-xl font-bold text-gray-900">Activity History</h2>
-                         <button className="text-sm font-medium text-blue-600 hover:text-blue-700">View All</button>
-                    </div>
-                     <HabitHeatmap habitId={habitId} />
-                     <div className="mt-8 h-64 bg-gray-50 rounded-2xl flex items-center justify-center border border-dashed border-gray-200">
-                         <span className="text-gray-400 font-medium">Detailed Analytics Chart Coming Soon</span>
-                     </div>
-                 </div> */}
-
-            {/* Recent Activity */}
-            <RecentActivity habitId={habitId} logs={habit.logs || []} />
-          </div>
-
-          {/* Right Column: Insights & Badges? */}
-          <div className="space-y-8">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200 relative overflow-hidden">
-              {/* Decorative texture */}
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl -mr-10 -mt-10" />
-
-              <h2 className="text-2xl font-bold mb-6 flex items-center gap-3 relative z-10">
-                <TrendingUp className="w-6 h-6" />
-                Insights
-              </h2>
-              <div className="space-y-4 relative z-10">
-                <InsightItem text="Best day: Monday (90% completion)" dark />
-                <InsightItem text="Most consistent: Week 48 (7/7 days)" dark />
-                <InsightItem text="Average per week: 5.2 completions" dark />
-                <div className="pt-4 border-t border-white/20">
-                  <p className="font-semibold text-lg">
-                    &quot;You&apos;re crushing it! Keep it up! 🚀&quot;
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Maybe a 'Notes' section in the future */}
-          </div>
-        </div>
+        {/* Charts */}
+        {habitId && <HabitCharts habitId={habitId} />}
       </main>
-    </div>
-  );
-}
-
-// Updated Stat Card Component
-function StatCard({
-  icon,
-  label,
-  value,
-  suffix,
-  bg = "bg-gray-50",
-  border = "border-gray-100",
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  suffix: string;
-  bg?: string;
-  border?: string;
-}) {
-  return (
-    <div
-      className={`bg-white rounded-3xl p-6 shadow-sm border ${border} hover:shadow-md transition-shadow group`}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className={`p-3 rounded-2xl ${bg} group-hover:scale-110 transition-transform duration-300`}
-        >
-          {icon}
-        </div>
-        {/* Optional: Add a sparkline or mini trend indicator here */}
-      </div>
-      <div>
-        <p className="text-4xl font-extrabold text-gray-900 tracking-tight mb-1">
-          {value}
-          <span className="text-lg font-medium text-gray-500 ml-1">
-            {suffix}
-          </span>
-        </p>
-        <p className="text-sm font-medium text-gray-500">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-// Updated Insight Item Component
-function InsightItem({ text, dark }: { text: string; dark?: boolean }) {
-  return (
-    <div
-      className={`flex items-start gap-3 p-3 rounded-xl ${dark ? "bg-white/10" : "bg-gray-50"}`}
-    >
-      <div
-        className={`mt-1.5 w-1.5 h-1.5 rounded-full ${dark ? "bg-indigo-300" : "bg-blue-500"}`}
-      />
-      <p
-        className={`text-sm font-medium ${dark ? "text-indigo-50" : "text-gray-700"}`}
-      >
-        {text}
-      </p>
     </div>
   );
 }
