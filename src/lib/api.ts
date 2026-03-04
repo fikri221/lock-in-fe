@@ -24,26 +24,91 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
+
+let isRefreshing = false;
+let failedQueue: {
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
 
 // Response interceptor to handle responses globally
 api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
     // Handle unauthorized errors
-    if (error.response && error.response.status === 401) {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      // Attempting to refresh the refresh token itself or logging in should not trigger loop
       if (
-        typeof window !== "undefined" &&
-        !window.location.pathname.startsWith("/login")
+        originalRequest.url === "/auth/refresh" ||
+        originalRequest.url === "/auth/login"
       ) {
-        window.location.href = "/login";
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login")
+        ) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise(function (resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        await api.post("/auth/refresh");
+        processQueue(null);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError);
+        // If the refresh token is also invalid/expired, throw user to login
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login")
+        ) {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     return Promise.reject(error);
-  }
+  },
 );
 
 export const authAPI = {
