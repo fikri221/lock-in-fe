@@ -26,7 +26,7 @@ export default function HorizontalCalendar({
     // Scroll to selected date on mount or when changed
     if (scrollContainerRef.current) {
       const selectedElement = scrollContainerRef.current.querySelector(
-        `[data-date="${selectedDate.toISOString().split("T")[0]}"]`
+        `[data-date="${selectedDate.toISOString().split("T")[0]}"]`,
       ) as HTMLElement;
 
       if (selectedElement) {
@@ -59,7 +59,7 @@ export default function HorizontalCalendar({
       {/* Left Navigation Button */}
       <button
         onClick={() => scroll("left")}
-        className="hidden md:flex absolute left-0 z-10 -ml-4 h-full w-12 items-center justify-start bg-gradient-to-r from-white via-white/80 to-transparent pr-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+        className="hidden md:flex absolute left-0 z-10 -ml-6 h-full w-12 items-center justify-start from-white via-white/80 to-transparent pr-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
         aria-label="Scroll left"
       >
         <ChevronLeft className="w-6 h-6" />
@@ -86,14 +86,14 @@ export default function HorizontalCalendar({
                   : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100",
                 isToday &&
                   !isSelected &&
-                  "border-blue-200 bg-blue-50/50 text-blue-600"
+                  "border-blue-200 bg-blue-50/50 text-blue-600",
               )}
             >
               <span
                 className={cn(
                   "text-xs font-medium uppercase mb-1",
                   isSelected ? "text-blue-100" : "text-gray-400",
-                  isToday && !isSelected && "text-blue-500"
+                  isToday && !isSelected && "text-blue-500",
                 )}
               >
                 {format(date, "EEE")}
@@ -102,7 +102,7 @@ export default function HorizontalCalendar({
                 className={cn(
                   "text-lg font-bold",
                   isSelected ? "text-white" : "text-gray-900",
-                  isToday && !isSelected && "text-blue-700"
+                  isToday && !isSelected && "text-blue-700",
                 )}
               >
                 {format(date, "dd")}
@@ -113,7 +113,7 @@ export default function HorizontalCalendar({
                 <div
                   className={cn(
                     "absolute bottom-1.5 w-1 h-1 rounded-full",
-                    isSelected ? "bg-white/50" : "bg-blue-500"
+                    isSelected ? "bg-white/50" : "bg-blue-500",
                   )}
                 />
               )}
@@ -125,7 +125,7 @@ export default function HorizontalCalendar({
       {/* Right Navigation Button */}
       <button
         onClick={() => scroll("right")}
-        className="hidden md:flex absolute right-0 z-10 -mr-4 h-full w-12 items-center justify-end bg-gradient-to-l from-white via-white/80 to-transparent pl-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+        className="hidden md:flex absolute right-0 z-10 -mr-6 h-full w-12 items-center justify-end from-white via-white/80 to-transparent pl-4 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
         aria-label="Scroll right"
       >
         <ChevronRight className="w-6 h-6" />
