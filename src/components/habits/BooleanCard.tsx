@@ -267,6 +267,7 @@ export function BooleanCard({
           zIndex: isDragMode ? 50 : 1,
         }}
         drag={isDragMode ? true : isDraggable ? "x" : false}
+        dragDirectionLock={true}
         dragConstraints={isDragMode ? undefined : { left: 0, right: 0 }}
         dragElastic={isDragMode ? 0.5 : 0.7}
         onDragStart={() => setSwiping(true)}
@@ -277,7 +278,7 @@ export function BooleanCard({
         onPointerLeave={handlePointerUp}
         whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
-        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${
+        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md touch-pan-y ${
           isDone
             ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
             : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"

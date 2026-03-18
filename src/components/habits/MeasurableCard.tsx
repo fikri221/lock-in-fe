@@ -103,6 +103,7 @@ export function MeasurableCard({
   const [petals, setPetals] = useState<Petal[]>([]);
   const [showFlower, setShowFlower] = useState(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const startValueRef = useRef(0);
   const hasDraggedRef = useRef(false);
   const prevSnapRef = useRef(Number(log?.actualValue ?? 0));
@@ -240,6 +241,7 @@ export function MeasurableCard({
       if (expanded) return;
 
       startXRef.current = e.clientX;
+      startYRef.current = e.clientY;
       startValueRef.current = currentValue;
       hasDraggedRef.current = false;
       prevSnapRef.current = currentValue;
@@ -255,14 +257,26 @@ export function MeasurableCard({
 
       if (!dragging) return;
       const deltaX = e.clientX - startXRef.current;
+      const deltaY = e.clientY - startYRef.current;
 
       // If moved significantly, cancel long press
-      if (Math.abs(deltaX) > 10 && longPressTimer.current) {
+      if (
+        (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) &&
+        longPressTimer.current
+      ) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
 
-      if (!hasDraggedRef.current && Math.abs(deltaX) < 5) return;
+      if (!hasDraggedRef.current) {
+        // If movement is more vertical than horizontal, don't start dragging
+        if (Math.abs(deltaY) > Math.abs(deltaX) + 5) {
+          setDragging(false);
+          return;
+        }
+        if (Math.abs(deltaX) < 10) return;
+      }
+
       hasDraggedRef.current = true;
 
       if (!cardRef.current) return;
@@ -371,8 +385,9 @@ export function MeasurableCard({
       <motion.div
         ref={cardRef}
         style={{ x, y, scale, rotate, opacity, zIndex: isDragMode ? 50 : 1 }}
-        drag={true}
+        drag={isDragMode ? true : false}
         dragListener={true}
+        dragDirectionLock={true}
         dragConstraints={
           isDragMode ? undefined : { left: 0, right: 0, top: 0, bottom: 0 }
         }
@@ -383,7 +398,7 @@ export function MeasurableCard({
         onPointerLeave={handlePointerUp}
         onPointerMove={handlePointerMove}
         onClick={handleTap}
-        className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 touch-none ${
+        className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 touch-pan-y ${
           isMax
             ? "border-green-400 bg-gradient-to-r from-green-50/60 to-emerald-50/60 dark:border-green-700 dark:from-green-950/30 dark:to-emerald-950/30"
             : isDone
