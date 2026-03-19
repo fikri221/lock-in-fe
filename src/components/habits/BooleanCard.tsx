@@ -45,6 +45,7 @@ export function BooleanCard({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isPointerDownRef = useRef(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const dragControls = useDragControls();
   const pointerEventRef = useRef<React.PointerEvent | null>(null);
 
@@ -79,6 +80,41 @@ export function BooleanCard({
   useEffect(() => {
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);
+
+  // [Efek Samping]: Penggunaan e.preventDefault() pada touchmove non-passive akan
+  // mematikan scroll bawaan browser (native scroll) sementara.
+  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat kita sedang
+  // menunggu timer Long Press (500ms).
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // 1. Jika sudah dalam mode drag (misal: mode hapus), kunci sentuhan.
+      if (isDragMode) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // 2. Cegah scroll browser saat jari masih tertahan (nunggu 500ms).
+      // Memungkinkan long press dideteksi tanpa diganggu scroll sistem.
+      if (longPressTimer.current) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - startXRef.current);
+        const dy = Math.abs(
+          touch.clientY - (startYRef?.current ?? touch.clientY),
+        );
+
+        if (dx < 10 && dy < 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    };
+
+    // Passive false diperlukan agar bisa memanggil preventDefault() pada gesture.
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => card.removeEventListener("touchmove", handleTouchMove);
+  }, [isDragMode]);
 
   function triggerFlyAndDrop(
     direction: "right" | "left",
@@ -160,11 +196,20 @@ export function BooleanCard({
         typeof window !== "undefined" ? window.innerHeight : 800;
       const dropY = info.point.y;
 
+      console.log(
+        "BooleanCard: Drag ended. dropY:",
+        dropY,
+        "windowHeight:",
+        windowHeight,
+      );
+
       if (dropY > windowHeight - 150) {
+        console.log("BooleanCard: Delete triggered!");
         onDelete?.();
         animate(scale, 0, { duration: 0.3 });
         animate(opacity, 0, { duration: 0.3 });
       } else {
+        console.log("BooleanCard: Drag cancelled - not in trash zone.");
         setIsDragMode(false);
         animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
         animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
@@ -194,16 +239,24 @@ export function BooleanCard({
     isPointerDownRef.current = true;
     e.currentTarget.setPointerCapture(e.pointerId);
     startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
     pointerEventRef.current = e;
 
     longPressTimer.current = setTimeout(() => {
       if (isPointerDownRef.current) {
         setIsDragMode(true);
         setSwiping(true);
+        console.log("Long press triggered in BooleanCard!");
         animate(scale, 1.05, { duration: 0.2 });
 
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(50);
+        }
+
+        // [Optimasi]: Mengatur touchAction ke 'none' secara manual ke elemen DOM.
+        // Lebih cepat daripada menunggu state update agar browser tidak sempat scroll.
+        if (cardRef.current) {
+          cardRef.current.style.touchAction = "none";
         }
 
         if (pointerEventRef.current) {
@@ -216,19 +269,31 @@ export function BooleanCard({
   const handlePointerMove = (e: React.PointerEvent) => {
     if (isDragMode) return;
 
-    if (
-      Math.abs(e.clientX - startXRef.current) > 10 &&
-      longPressTimer.current
-    ) {
+    const deltaX = e.clientX - startXRef.current;
+    // Note: We don't check deltaY here manually in the timer cancel block
+    // to allow some vertical wiggle during long press on mobile.
+    // However, the browser might still trigger a pointercancel if it detects a scroll.
+    const threshold = 15;
+    if (Math.abs(deltaX) > threshold && longPressTimer.current) {
+      console.log(
+        `Long press in BooleanCard cancelled by horizontal movement: deltaX=${deltaX}`,
+      );
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     isPointerDownRef.current = false;
+    if (cardRef.current) {
+      cardRef.current.style.touchAction = "pan-y";
+    }
     if (longPressTimer.current) {
+      console.log(
+        `Pointer up/cancel/leave in BooleanCard. Event type: ${e.type}`,
+      );
       clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
     pointerEventRef.current = null;
   };
@@ -282,6 +347,7 @@ export function BooleanCard({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
         className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${

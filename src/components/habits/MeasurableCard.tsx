@@ -110,6 +110,7 @@ export function MeasurableCard({
   const startYRef = useRef(0);
   const startValueRef = useRef(0);
   const hasDraggedRef = useRef(false);
+  const draggingRef = useRef(false);
   const prevSnapRef = useRef(Number(log?.actualValue ?? 0));
 
   // Drag to delete state
@@ -122,7 +123,7 @@ export function MeasurableCard({
   const rotate = useMotionValue(0);
   const opacity = useMotionValue(1);
   console.log("isDragMode: ", isDragMode);
-  console.log("isDragging: ", dragging);
+  // console.log("isDragging: ", dragging);
 
   const dragControls = useDragControls();
   const pointerEventRef = useRef<React.PointerEvent | null>(null);
@@ -139,6 +140,41 @@ export function MeasurableCard({
   useEffect(() => {
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);
+
+  // [Efek Samping]: Penggunaan e.preventDefault() pada touchmove non-passive akan
+  // mematikan scroll bawaan browser (native scroll) sementara.
+  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat kita sedang
+  // menunggu timer Long Press (500ms) atau saat sedang melakukan dragging.
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // 1. Jika sudah dalam mode Drag to Delete atau sedang menggeser slider (Measurable),
+      // kita harus mengunci gesture agar tidak berubah jadi scroll halaman.
+      if (isDragMode || draggingRef.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // 2. Jika jari masih menempel (timer aktif) dan pergerakan masih sangat kecil (wiggle room),
+      // kita cegah browser untuk memulai scroll agar Long Press bisa terdeteksi dengan stabil.
+      if (longPressTimer.current) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - startXRef.current);
+        const dy = Math.abs(touch.clientY - startYRef.current);
+
+        // Jika jari hanya bergoyang < 10px, blokir scroll browser.
+        if (dx < 10 && dy < 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    };
+
+    // Kita harus menggunakan { passive: false } agar preventDefault() diizinkan oleh browser.
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => card.removeEventListener("touchmove", handleTouchMove);
+  }, [isDragMode]);
 
   const vineBg = useTransform(fillPct, (v) => {
     if (v <= 0) return "rgba(0,0,0,0)";
@@ -238,6 +274,12 @@ export function MeasurableCard({
               navigator.vibrate(50);
             }
 
+            // [Optimasi]: Mengatur touchAction secara imperatif ke 'none' agar perubahan
+            // lebih cepat dari render React, mencegah scroll saat mulai ditarik.
+            if (cardRef.current) {
+              cardRef.current.style.touchAction = "none";
+            }
+
             dragControls.start(pointerEventRef.current);
           }
         }
@@ -251,6 +293,7 @@ export function MeasurableCard({
       hasDraggedRef.current = false;
       prevSnapRef.current = currentValue;
       setDragging(true);
+      draggingRef.current = true;
     },
     [expanded, currentValue, scale, rotate, dragControls],
   );
@@ -263,11 +306,9 @@ export function MeasurableCard({
       const deltaX = e.clientX - startXRef.current;
       const deltaY = e.clientY - startYRef.current;
 
-      // If moved significantly, cancel long press
-      if (
-        (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10) &&
-        longPressTimer.current
-      ) {
+      // If moved significantly horizontally, cancel long press
+      // Vertical movement is allowed a bit more to prevent accidental cancellation on touch screens
+      if (Math.abs(deltaX) > 15 && longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
@@ -276,6 +317,7 @@ export function MeasurableCard({
         // If movement is more vertical than horizontal, don't start dragging
         if (Math.abs(deltaY) > Math.abs(deltaX) + 5) {
           setDragging(false);
+          draggingRef.current = false;
           return;
         }
         if (Math.abs(deltaX) < 10) return;
@@ -309,6 +351,9 @@ export function MeasurableCard({
 
   const handlePointerUp = useCallback(() => {
     isPointerDownRef.current = false;
+    if (cardRef.current) {
+      cardRef.current.style.touchAction = "pan-y";
+    }
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
@@ -331,6 +376,7 @@ export function MeasurableCard({
       }
     }
     setDragging(false);
+    draggingRef.current = false;
     hasDraggedRef.current = false;
     pointerEventRef.current = null;
   }, [dragging, liveValue, maxValue, onSetValue, spawnPetals, isDragMode]);
@@ -344,11 +390,15 @@ export function MeasurableCard({
         typeof window !== "undefined" ? window.innerHeight : 800;
       const dropY = info.point.y;
 
+      console.log("Drag ended. dropY:", dropY, "windowHeight:", windowHeight);
+
       if (dropY > windowHeight - 150) {
+        console.log("Delete triggered!");
         onDelete?.();
         animate(scale, 0, { duration: 0.3 });
         animate(opacity, 0, { duration: 0.3 });
       } else {
+        console.log("Drag cancelled - not in trash zone.");
         setIsDragMode(false);
         animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
         animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
@@ -400,6 +450,7 @@ export function MeasurableCard({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onPointerMove={handlePointerMove}
         onClick={handleTap}
         className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 ${
