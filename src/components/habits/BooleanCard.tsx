@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  animate,
+  useDragControls,
+} from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { Habit, LogCompletion, LogCompletionType } from "@/types/habits";
 import { useRouter } from "next/navigation";
@@ -39,6 +45,8 @@ export function BooleanCard({
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isPointerDownRef = useRef(false);
   const startXRef = useRef(0);
+  const dragControls = useDragControls();
+  const pointerEventRef = useRef<React.PointerEvent | null>(null);
 
   const bgRight = useTransform(
     x,
@@ -152,13 +160,11 @@ export function BooleanCard({
         typeof window !== "undefined" ? window.innerHeight : 800;
       const dropY = info.point.y;
 
-      // Check if dropped in trash zone
       if (dropY > windowHeight - 150) {
         onDelete?.();
         animate(scale, 0, { duration: 0.3 });
         animate(opacity, 0, { duration: 0.3 });
       } else {
-        // Reset
         setIsDragMode(false);
         animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
         animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
@@ -185,31 +191,31 @@ export function BooleanCard({
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Long Press Logic
     isPointerDownRef.current = true;
-    // Only set capture if we want to track it, but for swipe cards be careful
-    // For now we try to detect hold without capturing aggressively unless needed
     e.currentTarget.setPointerCapture(e.pointerId);
     startXRef.current = e.clientX;
+    pointerEventRef.current = e;
 
     longPressTimer.current = setTimeout(() => {
       if (isPointerDownRef.current) {
         setIsDragMode(true);
-        setSwiping(true); // Treat as swiping to prevent click
+        setSwiping(true);
         animate(scale, 1.05, { duration: 0.2 });
-        // animate(rotateZ, 2, { duration: 0.2 }); // small jiggle
 
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(50);
         }
+
+        if (pointerEventRef.current) {
+          dragControls.start(pointerEventRef.current);
+        }
       }
-    }, 500); // 500ms hold
+    }, 500);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (isDragMode) return;
 
-    // If moved significantly, cancel long press
     if (
       Math.abs(e.clientX - startXRef.current) > 10 &&
       longPressTimer.current
@@ -224,7 +230,7 @@ export function BooleanCard({
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
-    // If we were just clicking and not swiping/dragging, swiping state is handled by dragStart/End
+    pointerEventRef.current = null;
   };
 
   const isDone = log?.status === LogCompletionType.COMPLETED;
@@ -267,8 +273,8 @@ export function BooleanCard({
           zIndex: isDragMode ? 50 : 1,
         }}
         drag={isDragMode ? true : isDraggable ? "x" : false}
-        dragDirectionLock={true}
-        dragConstraints={isDragMode ? undefined : { left: 0, right: 0 }}
+        dragControls={dragControls}
+        dragListener={!isDragMode}
         dragElastic={isDragMode ? 0.5 : 0.7}
         onDragStart={() => setSwiping(true)}
         onDragEnd={handleDragEnd}
@@ -278,7 +284,7 @@ export function BooleanCard({
         onPointerLeave={handlePointerUp}
         whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
-        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md touch-pan-y ${
+        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${
           isDone
             ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
             : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
