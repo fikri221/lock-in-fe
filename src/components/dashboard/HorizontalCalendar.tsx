@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo, useMemo } from "react";
 import { format, subDays, isSameDay } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,17 +10,19 @@ interface HorizontalCalendarProps {
   onSelectDate: (date: Date) => void;
 }
 
-export default function HorizontalCalendar({
+const HorizontalCalendar = memo(function HorizontalCalendar({
   selectedDate,
   onSelectDate,
 }: HorizontalCalendarProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Generate dates: 30 days back to 14 days forward
-  const dates = Array.from({ length: 45 }, (_, i) => {
-    const today = new Date();
-    return subDays(today, 30 - i);
-  });
+  const dates = useMemo(() => {
+    return Array.from({ length: 45 }, (_, i) => {
+      const today = new Date();
+      return subDays(today, 30 - i);
+    });
+  }, []);
 
   useEffect(() => {
     // Scroll to selected date on mount or when changed
@@ -80,19 +82,19 @@ export default function HorizontalCalendar({
               data-date={date.toISOString().split("T")[0]}
               onClick={() => onSelectDate(date)}
               className={cn(
-                "flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl transition-all duration-200 snap-center cursor-pointer",
+                "flex-shrink-0 flex flex-col items-center justify-center w-14 h-16 rounded-2xl transition-all duration-200 snap-center cursor-pointer relative",
                 isSelected
                   ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg scale-105"
-                  : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100",
+                  : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 dark:bg-zinc-900 dark:border-zinc-800",
                 isToday &&
                   !isSelected &&
-                  "border-blue-200 bg-blue-50/50 text-blue-600",
+                  "border-blue-200 bg-blue-50/50 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800",
               )}
             >
               <span
                 className={cn(
                   "text-xs font-medium uppercase mb-1",
-                  isSelected ? "text-blue-100" : "text-gray-400",
+                  isSelected ? "text-blue-100" : "text-gray-400 dark:text-gray-500",
                   isToday && !isSelected && "text-blue-500",
                 )}
               >
@@ -101,8 +103,8 @@ export default function HorizontalCalendar({
               <span
                 className={cn(
                   "text-lg font-bold",
-                  isSelected ? "text-white" : "text-gray-900",
-                  isToday && !isSelected && "text-blue-700",
+                  isSelected ? "text-white" : "text-gray-900 dark:text-zinc-100",
+                  isToday && !isSelected && "text-blue-700 dark:text-blue-400",
                 )}
               >
                 {format(date, "dd")}
@@ -132,4 +134,6 @@ export default function HorizontalCalendar({
       </button>
     </div>
   );
-}
+});
+
+export default HorizontalCalendar;

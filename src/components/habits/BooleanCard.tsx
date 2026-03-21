@@ -7,7 +7,7 @@ import {
   animate,
   useDragControls,
 } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, memo, startTransition } from "react";
 import { Habit, LogCompletion, LogCompletionType } from "@/types/habits";
 import { useRouter } from "next/navigation";
 
@@ -18,19 +18,18 @@ interface BooleanCardProps {
   log?: LogCompletion;
   onComplete: () => void;
   onSkip: () => void;
+  onDelete?: () => void;
+  onDragToggle?: (isDragging: boolean) => void;
 }
 
-export function BooleanCard({
+export const BooleanCard = memo(function BooleanCard({
   habit,
   log,
   onComplete,
   onSkip,
   onDelete,
   onDragToggle,
-}: BooleanCardProps & {
-  onDelete?: () => void;
-  onDragToggle?: (isDragging: boolean) => void;
-}) {
+}: BooleanCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotateZ = useMotionValue(0);
@@ -39,6 +38,7 @@ export function BooleanCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<CardPhase>("idle");
   const [swiping, setSwiping] = useState(false);
+  const [localDone, setLocalDone] = useState(false);
 
   // Drag to delete state
   const [isDragMode, setIsDragMode] = useState(false);
@@ -83,7 +83,7 @@ export function BooleanCard({
 
   // [Efek Samping]: Penggunaan e.preventDefault() pada touchmove non-passive akan
   // mematikan scroll bawaan browser (native scroll) sementara.
-  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat kita sedang
+  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat user sedang
   // menunggu timer Long Press (500ms).
   useEffect(() => {
     const card = cardRef.current;
@@ -120,11 +120,6 @@ export function BooleanCard({
     direction: "right" | "left",
     callback: () => void,
   ) {
-    if (!callbackFiredRef.current) {
-      callbackFiredRef.current = true;
-      callback();
-    }
-
     setPhase("flying-out");
 
     const flyX = direction === "right" ? 600 : -600;
@@ -144,7 +139,18 @@ export function BooleanCard({
       }),
       animate(opacity, 0, { duration: 0.25, delay: 0.1 }),
     ]).then(() => {
-      callbackFiredRef.current = false;
+      // Set local state for immediate visual feedback during drop-in animation
+      if (direction === "right") {
+        setLocalDone(true);
+      } else {
+        setLocalDone(false);
+      }
+
+      // Wrap the callback in startTransition so React treats it as low priority
+      // This prevents the global re-render from blocking the "dropping-in" animation
+      startTransition(() => {
+        callback();
+      });
 
       x.set(0);
       rotateZ.set(-6 + Math.random() * 12);
@@ -179,6 +185,9 @@ export function BooleanCard({
       setTimeout(() => {
         setPhase("idle");
         setSwiping(false);
+        // Reset localDone because by now the global state (from onComplete/onSkip)
+        // should have propagated down through the log prop.
+        setLocalDone(false);
       }, 800);
     });
   }
@@ -187,7 +196,7 @@ export function BooleanCard({
     _: unknown,
     info: {
       point: { x: number; y: number };
-      offset: { x: number };
+      offset: { x: number; y: number };
       velocity: { x: number };
     },
   ) {
@@ -203,19 +212,21 @@ export function BooleanCard({
         windowHeight,
       );
 
-      if (dropY > windowHeight - 150) {
+      const isMovingUp = info.offset.y < -30;
+      if (dropY > windowHeight - 100 && !isMovingUp) {
         console.log("BooleanCard: Delete triggered!");
         onDelete?.();
-        animate(scale, 0, { duration: 0.3 });
-        animate(opacity, 0, { duration: 0.3 });
       } else {
-        console.log("BooleanCard: Drag cancelled - not in trash zone.");
-        setIsDragMode(false);
-        animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(scale, 1, { duration: 0.2 });
-        animate(rotateZ, 0, { duration: 0.2 });
+        console.log(
+          "BooleanCard: Drag cancelled - moved up or not in trash zone.",
+        );
       }
+
+      setIsDragMode(false);
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(scale, 1, { duration: 0.2 });
+      animate(rotateZ, 0, { duration: 0.2 });
       return;
     }
 
@@ -298,7 +309,7 @@ export function BooleanCard({
     pointerEventRef.current = null;
   };
 
-  const isDone = log?.status === LogCompletionType.COMPLETED;
+  const isDone = log?.status === LogCompletionType.COMPLETED || localDone;
   const isDraggable = phase === "idle";
 
   const handleCardClick = () => {
@@ -387,4 +398,4 @@ export function BooleanCard({
       </motion.div>
     </div>
   );
-}
+});

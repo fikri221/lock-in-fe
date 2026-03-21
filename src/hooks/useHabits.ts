@@ -1,5 +1,5 @@
 // src/hooks/useHabits.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, startTransition } from "react";
 import { habitsAPI } from "@/lib/api";
 import {
   CreateHabitRequest,
@@ -181,22 +181,26 @@ export const useHabits = (
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
-      setHabits((prev) =>
-        prev.map((h) => {
-          if (h.id === id) {
-            const logDate = new Date(logCompletion.logDate || new Date());
-            // Replace the log for this date with the real one from server
-            const newLogs = (h.logs || []).map((l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              logDate.toDateString()
-                ? newLog
-                : l,
-            );
-            return { ...h, logs: newLogs };
-          }
-          return h;
-        }),
-      );
+      // Wrapping this in startTransition because the UI is already updated optimistically.
+      // We don't want this sync to interrupt ongoing animations.
+      startTransition(() => {
+        setHabits((prev) =>
+          prev.map((h) => {
+            if (h.id === id) {
+              const logDate = new Date(logCompletion.logDate || new Date());
+              // Replace the log for this date with the real one from server
+              const newLogs = (h.logs || []).map((l) =>
+                new Date(l.logDate || l.createdAt || "").toDateString() ===
+                logDate.toDateString()
+                  ? newLog
+                  : l,
+              );
+              return { ...h, logs: newLogs };
+            }
+            return h;
+          }),
+        );
+      });
 
       // toast.success("Habit completed! 🎉");
       return newLog;
@@ -349,21 +353,23 @@ export const useHabits = (
 
       // Sync with server data (replace the optimistic log with the real one)
       // Sync with server data
-      setHabits((prev) =>
-        prev.map((h) => {
-          if (h.id === id) {
-            const logDate = new Date(logCompletion.logDate || new Date());
-            const newLogs = (h.logs || []).map((l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              logDate.toDateString()
-                ? newLog
-                : l,
-            );
-            return { ...h, logs: newLogs };
-          }
-          return h;
-        }),
-      );
+      startTransition(() => {
+        setHabits((prev) =>
+          prev.map((h) => {
+            if (h.id === id) {
+              const logDate = new Date(logCompletion.logDate || new Date());
+              const newLogs = (h.logs || []).map((l) =>
+                new Date(l.logDate || l.createdAt || "").toDateString() ===
+                logDate.toDateString()
+                  ? newLog
+                  : l,
+              );
+              return { ...h, logs: newLogs };
+            }
+            return h;
+          }),
+        );
+      });
 
       toast.info("Habit skipped for today");
       return newLog;

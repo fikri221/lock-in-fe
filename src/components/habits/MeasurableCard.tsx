@@ -8,7 +8,7 @@ import {
   animate,
   useDragControls,
 } from "framer-motion";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
 
 /* ─── Leaf type ─── */
@@ -92,7 +92,7 @@ interface MeasurableCardProps {
   onDragToggle?: (isDragging: boolean) => void;
 }
 
-export function MeasurableCard({
+export const MeasurableCard = memo(function MeasurableCard({
   habit,
   log,
   onSetValue,
@@ -100,9 +100,10 @@ export function MeasurableCard({
   onDragToggle,
 }: MeasurableCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const widthRef = useRef(0);
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [liveValue, setLiveValue] = useState(Number(log?.actualValue ?? 0));
+  const liveValueMV = useMotionValue(Number(log?.actualValue ?? 0));
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [petals, setPetals] = useState<Petal[]>([]);
   const [showFlower, setShowFlower] = useState(false);
@@ -193,18 +194,18 @@ export function MeasurableCard({
     return `rgb(${r},${g},${b})`;
   });
 
-  const maxValue = Number(habit.targetValue ?? 100);
+  const maxValue = Number(habit.targetValue ?? 100) || 100;
   const step = 1;
-  const currentValue = Number(log?.actualValue ?? 0);
+  const currentValue = Number(log?.actualValue ?? 0) || 0;
 
   useEffect(() => {
-    setLiveValue(currentValue);
+    liveValueMV.set(currentValue);
     prevSnapRef.current = currentValue;
   }, [currentValue]);
 
   useEffect(() => {
     if (!dragging) {
-      animate(fillPct, Math.min(100, (currentValue / maxValue) * 100), {
+      animate(fillPct, Math.min(100, (currentValue / (maxValue || 1)) * 100), {
         type: "spring",
         stiffness: 120,
         damping: 20,
@@ -234,7 +235,7 @@ export function MeasurableCard({
       hue: 110 + Math.random() * 40,
       delay: Math.random() * 0.1,
     };
-    setLeaves((prev) => [...prev.slice(-20), leaf]);
+    setLeaves((prev) => [...prev.slice(-10), leaf]);
     setTimeout(() => {
       setLeaves((prev) => prev.filter((l) => l.id !== id));
     }, 2500);
@@ -242,10 +243,10 @@ export function MeasurableCard({
 
   const spawnPetals = useCallback(() => {
     const newPetals: Petal[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       newPetals.push({
         id: ++petalId,
-        angle: (i / 12) * 360 + Math.random() * 20,
+        angle: (i / 6) * 360 + Math.random() * 20,
         distance: 30 + Math.random() * 50,
         size: 4 + Math.random() * 4,
         hue: 330 + Math.random() * 40,
@@ -267,6 +268,9 @@ export function MeasurableCard({
           if (pointerEventRef.current) {
             setIsDragMode(true);
             setDragging(false);
+            if (cardRef.current) {
+              widthRef.current = cardRef.current.getBoundingClientRect().width;
+            }
             animate(scale, 1.05, { duration: 0.2 });
             animate(rotate, 2, { duration: 0.2 });
 
@@ -292,6 +296,9 @@ export function MeasurableCard({
       startValueRef.current = currentValue;
       hasDraggedRef.current = false;
       prevSnapRef.current = currentValue;
+      if (cardRef.current) {
+        widthRef.current = cardRef.current.getBoundingClientRect().width;
+      }
       setDragging(true);
       draggingRef.current = true;
     },
@@ -326,15 +333,19 @@ export function MeasurableCard({
       hasDraggedRef.current = true;
 
       if (!cardRef.current) return;
-      const cardWidth = cardRef.current.getBoundingClientRect().width;
+      const cardWidth =
+        widthRef.current || cardRef.current.getBoundingClientRect().width;
+      if (cardWidth <= 0) return;
 
       const deltaValue = (deltaX / cardWidth) * maxValue;
       const raw = startValueRef.current + deltaValue;
-      const val = snapToStep(raw);
+      const val = Number.isFinite(raw)
+        ? snapToStep(raw)
+        : startValueRef.current;
 
       // Detect step change — spawn leaf
       if (val !== prevSnapRef.current) {
-        const pct = (val / maxValue) * 100;
+        const pct = (val / (maxValue || 1)) * 100;
         if (val > prevSnapRef.current) {
           // Growing — spawn leaf at new position
           spawnLeaf(pct);
@@ -343,7 +354,7 @@ export function MeasurableCard({
         prevSnapRef.current = val;
       }
 
-      setLiveValue(val);
+      liveValueMV.set(val);
       fillPct.set(Math.min(100, (val / maxValue) * 100));
     },
     [dragging, maxValue, snapToStep, fillPct, spawnLeaf, isDragMode],
@@ -368,10 +379,11 @@ export function MeasurableCard({
       return;
     }
     if (hasDraggedRef.current) {
-      if (liveValue !== startValueRef.current) {
-        onSetValue({ actualValue: liveValue });
+      const finalValue = liveValueMV.get();
+      if (finalValue !== startValueRef.current) {
+        onSetValue({ actualValue: finalValue });
       }
-      if (liveValue >= maxValue) {
+      if (finalValue >= maxValue) {
         spawnPetals();
       }
     }
@@ -379,11 +391,14 @@ export function MeasurableCard({
     draggingRef.current = false;
     hasDraggedRef.current = false;
     pointerEventRef.current = null;
-  }, [dragging, liveValue, maxValue, onSetValue, spawnPetals, isDragMode]);
+  }, [dragging, liveValueMV, maxValue, onSetValue, spawnPetals, isDragMode]);
 
   const handleDragEnd = (
     _: unknown,
-    info: { point: { x: number; y: number } },
+    info: {
+      point: { x: number; y: number };
+      offset: { x: number; y: number };
+    },
   ) => {
     if (isDragMode) {
       const windowHeight =
@@ -392,19 +407,19 @@ export function MeasurableCard({
 
       console.log("Drag ended. dropY:", dropY, "windowHeight:", windowHeight);
 
-      if (dropY > windowHeight - 150) {
+      const isMovingUp = info.offset.y < -30;
+      if (dropY > windowHeight - 100 && !isMovingUp) {
         console.log("Delete triggered!");
         onDelete?.();
-        animate(scale, 0, { duration: 0.3 });
-        animate(opacity, 0, { duration: 0.3 });
       } else {
-        console.log("Drag cancelled - not in trash zone.");
-        setIsDragMode(false);
-        animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(scale, 1, { duration: 0.2 });
-        animate(rotate, 0, { duration: 0.2 });
+        console.log("Drag cancelled - moved up or not in trash zone.");
       }
+
+      setIsDragMode(false);
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(scale, 1, { duration: 0.2 });
+      animate(rotate, 0, { duration: 0.2 });
     }
   };
 
@@ -419,19 +434,22 @@ export function MeasurableCard({
     if (isDragMode) return;
     const newVal = Math.max(0, currentValue + delta);
     onSetValue({ actualValue: newVal });
-    setLiveValue(newVal);
+    liveValueMV.set(newVal);
     if (delta > 0) {
-      spawnLeaf(Math.min(100, (newVal / maxValue) * 100));
+      spawnLeaf(Math.min(100, (newVal / (maxValue || 1)) * 100));
     }
     if (newVal >= maxValue) {
       spawnPetals();
     }
   }
 
-  const displayValue = dragging ? liveValue : currentValue;
+  const displayValue = dragging ? liveValueMV.get() : currentValue;
   const isDone = currentValue > 0;
   const isMax = displayValue >= maxValue;
-  const segmentCount = Math.floor((displayValue / maxValue) * 8);
+  const segmentCount = Math.max(
+    0,
+    Math.min(10, Math.floor((displayValue / (maxValue || 1)) * 8) || 0),
+  );
 
   return (
     <div className="relative">
@@ -659,4 +677,4 @@ export function MeasurableCard({
       </motion.div>
     </div>
   );
-}
+});
