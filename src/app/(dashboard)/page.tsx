@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -9,29 +9,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import HabitForm from "@/components/habits/HabitForm";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import HorizontalCalendar from "@/components/dashboard/HorizontalCalendar";
-import { Weather } from "@/types/weather";
-import {
-  LogCompletionType,
-  CreateHabitRequest,
-  LogCompletion,
-} from "@/types/habits";
+import { LogCompletionType, CreateHabitRequest } from "@/types/habits";
 import { BooleanCard } from "@/components/habits/BooleanCard";
 import { MeasurableCard } from "@/components/habits/MeasurableCard";
-
-interface UndoAction {
-  type: "complete" | "skip" | "value";
-  habitId: string;
-  previousLog?: LogCompletion;
-}
 
 export default function Dashboard() {
   const router = useRouter();
 
-  const [weather, setWeather] = useState<Weather | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [undo, setUndo] = useState<UndoAction | null>(null);
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   /* ─── Drag to Delete State ─── */
@@ -51,7 +37,6 @@ export default function Dashboard() {
     completeHabit,
     skipHabit,
     deleteHabit,
-    cancelHabit,
   } = useHabits(selectedDate.toDateString());
 
   useEffect(() => {
@@ -61,25 +46,15 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  useEffect(() => {
-    // Mock weather data
-    setWeather({
-      temp: 28,
-      condition: "Clear",
-      description: "clear sky",
-      icon: "01d",
-    });
-  }, []);
-
-  const showUndo = useCallback((action: UndoAction) => {
-    if (undoTimer.current) clearTimeout(undoTimer.current);
-    setUndo(action);
-    undoTimer.current = setTimeout(() => setUndo(null), 4000);
-  }, []);
-
-  function handleUndo() {
-    console.log("Undo");
-  }
+  // useEffect(() => {
+  //   // Mock weather data
+  //   setWeather({
+  //     temp: 28,
+  //     condition: "Clear",
+  //     description: "clear sky",
+  //     icon: "01d",
+  //   });
+  // }, []);
 
   const handleCompleteHabit = async (
     habitId: string,
@@ -103,23 +78,6 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error("Error skipping habit:", error);
-    }
-  };
-
-  const handleCancelHabit = async (
-    habitId: string,
-    data?: {
-      cancelledReason?: string;
-      logDate: Date;
-    },
-  ) => {
-    try {
-      await cancelHabit(habitId, {
-        status: LogCompletionType.CANCELLED,
-        ...data,
-      });
-    } catch (error) {
-      console.error("Error cancelling habit:", error);
     }
   };
 
