@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, LogOut } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
@@ -9,9 +9,102 @@ import { AnimatePresence, motion } from "framer-motion";
 import HabitForm from "@/components/habits/HabitForm";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import HorizontalCalendar from "@/components/dashboard/HorizontalCalendar";
-import { LogCompletionType, CreateHabitRequest } from "@/types/habits";
+import {
+  LogCompletionType,
+  CreateHabitRequest,
+  LogCompletion,
+  Habit,
+} from "@/types/habits";
 import { BooleanCard } from "@/components/habits/BooleanCard";
 import { MeasurableCard } from "@/components/habits/MeasurableCard";
+
+interface HabitItemProps {
+  habit: Habit;
+  log?: LogCompletion;
+  selectedDate: Date;
+  onComplete: (
+    id: string,
+    data?: { actualValue?: number; logDate?: Date },
+  ) => void;
+  onSkip: (id: string, data?: { logDate?: Date }) => void;
+  onDelete: (id: string) => void;
+  onDragToggle: (id: string, isDragging: boolean) => void;
+}
+
+const HabitItem = memo(function HabitItem({
+  habit,
+  log,
+  selectedDate,
+  onComplete,
+  onSkip,
+  onDelete,
+  onDragToggle,
+}: HabitItemProps) {
+  const handleComplete = useCallback(() => {
+    onComplete(habit.id, { logDate: selectedDate });
+  }, [habit.id, onComplete, selectedDate]);
+
+  const handleSkip = useCallback(() => {
+    onSkip(habit.id, { logDate: selectedDate });
+  }, [habit.id, onSkip, selectedDate]);
+
+  const handleSetValue = useCallback(
+    (data: { actualValue: number }) => {
+      onComplete(habit.id, { logDate: selectedDate, ...data });
+    },
+    [habit.id, onComplete, selectedDate],
+  );
+
+  const handleDelete = useCallback(() => {
+    onDelete(habit.id);
+  }, [habit.id, onDelete]);
+
+  const handleToggle = useCallback(
+    (isDragging: boolean) => {
+      onDragToggle(habit.id, isDragging);
+    },
+    [habit.id, onDragToggle],
+  );
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.8,
+        transition: { duration: 0.2 },
+      }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 30,
+        opacity: { duration: 0.2 },
+      }}
+      className="relative"
+    >
+      {habit.habitType === "boolean" ? (
+        <BooleanCard
+          habit={habit}
+          log={log}
+          onComplete={handleComplete}
+          onSkip={handleSkip}
+          onDelete={handleDelete}
+          onDragToggle={handleToggle}
+        />
+      ) : (
+        <MeasurableCard
+          habit={habit}
+          log={log}
+          onSetValue={handleSetValue}
+          onDelete={handleDelete}
+          onDragToggle={handleToggle}
+        />
+      )}
+    </motion.div>
+  );
+});
 
 export default function Dashboard() {
   const router = useRouter();
@@ -39,6 +132,34 @@ export default function Dashboard() {
     deleteHabit,
   } = useHabits(selectedDate.toDateString());
 
+  // Filter habits for selected date
+  const todaysHabits = useMemo(() => {
+    return habits.filter((habit) => {
+      // If targetDays is defined and not empty, check if today is included
+      if (habit.targetDays && habit.targetDays.length > 0) {
+        const dayOfWeek = selectedDate.getDay();
+        return habit.targetDays.some((d) => Number(d) === dayOfWeek);
+      }
+      // Otherwise show (Daily, Weekly Flexible, etc.)
+      return true;
+    });
+  }, [habits, selectedDate]);
+
+  const { completedToday, totalHabits } = useMemo(() => {
+    const doneCount = todaysHabits.filter((h) =>
+      (h.logs ?? []).some(
+        (l) =>
+          l.status === LogCompletionType.COMPLETED &&
+          new Date(l.logDate || l.createdAt || "").toDateString() ===
+            selectedDate.toDateString(),
+      ),
+    ).length;
+    return {
+      completedToday: doneCount,
+      totalHabits: todaysHabits.length,
+    };
+  }, [todaysHabits, selectedDate]);
+
   useEffect(() => {
     // Check authentication
     if (!authLoading && !isAuthenticated) {
@@ -56,41 +177,50 @@ export default function Dashboard() {
   //   });
   // }, []);
 
-  const handleCompleteHabit = async (
-    habitId: string,
-    data?: { actualValue?: number; logDate: Date },
-  ) => {
-    try {
-      await completeHabit(habitId, {
-        status: LogCompletionType.COMPLETED,
-        ...data,
-      });
-    } catch (error) {
-      console.error("Error completing habit:", error);
-    }
-  };
-
-  const handleSkipHabit = async (habitId: string, data?: { logDate: Date }) => {
-    try {
-      await skipHabit(habitId, {
-        status: LogCompletionType.SKIPPED,
-        ...data,
-      });
-    } catch (error) {
-      console.error("Error skipping habit:", error);
-    }
-  };
-
-  const handleDeleteHabit = async (habitId: string) => {
-    setDraggingId(null);
-    if (confirm("Are you sure you want to delete this habit?")) {
+  const handleCompleteHabit = useCallback(
+    async (
+      habitId: string,
+      data?: { actualValue?: number; logDate?: Date },
+    ) => {
       try {
-        await deleteHabit(habitId);
+        await completeHabit(habitId, {
+          status: LogCompletionType.COMPLETED,
+          ...data,
+        });
       } catch (error) {
-        console.error("Error deleting habit:", error);
+        console.error("Error completing habit:", error);
       }
-    }
-  };
+    },
+    [completeHabit],
+  );
+
+  const handleSkipHabit = useCallback(
+    async (habitId: string, data?: { logDate?: Date }) => {
+      try {
+        await skipHabit(habitId, {
+          status: LogCompletionType.SKIPPED,
+          ...data,
+        });
+      } catch (error) {
+        console.error("Error skipping habit:", error);
+      }
+    },
+    [skipHabit],
+  );
+
+  const handleDeleteHabit = useCallback(
+    async (habitId: string) => {
+      setDraggingId(null);
+      if (confirm("Are you sure you want to delete this habit?")) {
+        try {
+          await deleteHabit(habitId);
+        } catch (error) {
+          console.error("Error deleting habit:", error);
+        }
+      }
+    },
+    [deleteHabit],
+  );
 
   const handleAddHabit = async (habitData: CreateHabitRequest) => {
     setIsFormOpen(false);
@@ -115,28 +245,6 @@ export default function Dashboard() {
   if (!isAuthenticated) {
     return null; // or return login page redirect component if handled differently
   }
-
-  // Filter habits for selected date
-  const todaysHabits = habits.filter((habit) => {
-    // If targetDays is defined and not empty, check if today is included
-    if (habit.targetDays && habit.targetDays.length > 0) {
-      const dayOfWeek = selectedDate.getDay();
-      return habit.targetDays.some((d) => Number(d) === dayOfWeek);
-    }
-    // Otherwise show (Daily, Weekly Flexible, etc.)
-    return true;
-  });
-
-  const completedToday = todaysHabits.filter((h) =>
-    (h.logs ?? []).some(
-      (l) =>
-        l.status === LogCompletionType.COMPLETED &&
-        new Date(l.createdAt || "").toDateString() ===
-          selectedDate.toDateString(),
-    ),
-  ).length;
-
-  const totalHabits = todaysHabits.length;
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
@@ -190,55 +298,28 @@ export default function Dashboard() {
           />
         </div>
         <div className="flex flex-col gap-3 pb-4">
-          {todaysHabits.map((habit, i) => {
-            const log = habit.logs?.find(
-              (l) =>
-                new Date(l.logDate || l.createdAt || "").toDateString() ===
-                selectedDate.toDateString(),
-            );
+          <AnimatePresence mode="popLayout">
+            {todaysHabits.map((habit) => {
+              const log = habit.logs?.find(
+                (l) =>
+                  new Date(l.logDate || l.createdAt || "").toDateString() ===
+                  selectedDate.toDateString(),
+              );
 
-            return (
-              <motion.div
-                key={habit.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                style={{ zIndex: draggingId === habit.id ? 50 : 1 }}
-              >
-                {habit.habitType === "boolean" ? (
-                  <BooleanCard
-                    habit={habit}
-                    log={log}
-                    onComplete={() =>
-                      handleCompleteHabit(habit.id, { logDate: selectedDate })
-                    }
-                    onSkip={() =>
-                      handleSkipHabit(habit.id, { logDate: selectedDate })
-                    }
-                    onDelete={() => handleDeleteHabit(habit.id)}
-                    onDragToggle={(isDragging) =>
-                      handleDragToggle(habit.id, isDragging)
-                    }
-                  />
-                ) : (
-                  <MeasurableCard
-                    habit={habit}
-                    log={log}
-                    onSetValue={(data) =>
-                      handleCompleteHabit(habit.id, {
-                        logDate: selectedDate,
-                        ...data,
-                      })
-                    }
-                    onDelete={() => handleDeleteHabit(habit.id)}
-                    onDragToggle={(isDragging) =>
-                      handleDragToggle(habit.id, isDragging)
-                    }
-                  />
-                )}
-              </motion.div>
-            );
-          })}
+              return (
+                <HabitItem
+                  key={habit.id}
+                  habit={habit}
+                  log={log}
+                  selectedDate={selectedDate}
+                  onComplete={handleCompleteHabit}
+                  onSkip={handleSkipHabit}
+                  onDelete={handleDeleteHabit}
+                  onDragToggle={handleDragToggle}
+                />
+              );
+            })}
+          </AnimatePresence>
         </div>
 
         {habits.length === 0 && (

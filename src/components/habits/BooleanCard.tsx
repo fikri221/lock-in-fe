@@ -1,7 +1,13 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  animate,
+  useDragControls,
+} from "framer-motion";
+import { useRef, useState, useEffect, memo, startTransition } from "react";
 import { Habit, LogCompletion, LogCompletionType } from "@/types/habits";
 import { useRouter } from "next/navigation";
 
@@ -12,19 +18,18 @@ interface BooleanCardProps {
   log?: LogCompletion;
   onComplete: () => void;
   onSkip: () => void;
+  onDelete?: () => void;
+  onDragToggle?: (isDragging: boolean) => void;
 }
 
-export function BooleanCard({
+export const BooleanCard = memo(function BooleanCard({
   habit,
   log,
   onComplete,
   onSkip,
   onDelete,
   onDragToggle,
-}: BooleanCardProps & {
-  onDelete?: () => void;
-  onDragToggle?: (isDragging: boolean) => void;
-}) {
+}: BooleanCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotateZ = useMotionValue(0);
@@ -33,12 +38,16 @@ export function BooleanCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<CardPhase>("idle");
   const [swiping, setSwiping] = useState(false);
+  const [localDone, setLocalDone] = useState(false);
 
   // Drag to delete state
   const [isDragMode, setIsDragMode] = useState(false);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isPointerDownRef = useRef(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const dragControls = useDragControls();
+  const pointerEventRef = useRef<React.PointerEvent | null>(null);
 
   const bgRight = useTransform(
     x,
@@ -64,23 +73,51 @@ export function BooleanCard({
   const rightOpacity = useTransform(x, [0, 80], [0, 1]);
   const leftOpacity = useTransform(x, [-80, 0], [1, 0]);
 
-  const callbackFiredRef = useRef(false);
-
   const router = useRouter();
 
   useEffect(() => {
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);
 
+  // [Efek Samping]: Penggunaan e.preventDefault() pada touchmove non-passive akan
+  // mematikan scroll bawaan browser (native scroll) sementara.
+  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat user sedang
+  // menunggu timer Long Press (500ms).
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // 1. Jika sudah dalam mode drag (misal: mode hapus), kunci sentuhan.
+      if (isDragMode) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // 2. Cegah scroll browser saat jari masih tertahan (nunggu 500ms).
+      // Memungkinkan long press dideteksi tanpa diganggu scroll sistem.
+      if (longPressTimer.current) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - startXRef.current);
+        const dy = Math.abs(
+          touch.clientY - (startYRef?.current ?? touch.clientY),
+        );
+
+        if (dx < 10 && dy < 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    };
+
+    // Passive false diperlukan agar bisa memanggil preventDefault() pada gesture.
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => card.removeEventListener("touchmove", handleTouchMove);
+  }, [isDragMode]);
+
   function triggerFlyAndDrop(
     direction: "right" | "left",
     callback: () => void,
   ) {
-    if (!callbackFiredRef.current) {
-      callbackFiredRef.current = true;
-      callback();
-    }
-
     setPhase("flying-out");
 
     const flyX = direction === "right" ? 600 : -600;
@@ -100,7 +137,18 @@ export function BooleanCard({
       }),
       animate(opacity, 0, { duration: 0.25, delay: 0.1 }),
     ]).then(() => {
-      callbackFiredRef.current = false;
+      // Set local state for immediate visual feedback during drop-in animation
+      if (direction === "right") {
+        setLocalDone(true);
+      } else {
+        setLocalDone(false);
+      }
+
+      // Wrap the callback in startTransition so React treats it as low priority
+      // This prevents the global re-render from blocking the "dropping-in" animation
+      startTransition(() => {
+        callback();
+      });
 
       x.set(0);
       rotateZ.set(-6 + Math.random() * 12);
@@ -135,6 +183,9 @@ export function BooleanCard({
       setTimeout(() => {
         setPhase("idle");
         setSwiping(false);
+        // Reset localDone because by now the global state (from onComplete/onSkip)
+        // should have propagated down through the log prop.
+        setLocalDone(false);
       }, 800);
     });
   }
@@ -143,7 +194,7 @@ export function BooleanCard({
     _: unknown,
     info: {
       point: { x: number; y: number };
-      offset: { x: number };
+      offset: { x: number; y: number };
       velocity: { x: number };
     },
   ) {
@@ -152,19 +203,28 @@ export function BooleanCard({
         typeof window !== "undefined" ? window.innerHeight : 800;
       const dropY = info.point.y;
 
-      // Check if dropped in trash zone
-      if (dropY > windowHeight - 150) {
+      console.log(
+        "BooleanCard: Drag ended. dropY:",
+        dropY,
+        "windowHeight:",
+        windowHeight,
+      );
+
+      const isMovingUp = info.offset.y < -30;
+      if (dropY > windowHeight - 100 && !isMovingUp) {
+        console.log("BooleanCard: Delete triggered!");
         onDelete?.();
-        animate(scale, 0, { duration: 0.3 });
-        animate(opacity, 0, { duration: 0.3 });
       } else {
-        // Reset
-        setIsDragMode(false);
-        animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(scale, 1, { duration: 0.2 });
-        animate(rotateZ, 0, { duration: 0.2 });
+        console.log(
+          "BooleanCard: Drag cancelled - moved up or not in trash zone.",
+        );
       }
+
+      setIsDragMode(false);
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(scale, 1, { duration: 0.2 });
+      animate(rotateZ, 0, { duration: 0.2 });
       return;
     }
 
@@ -185,49 +245,69 @@ export function BooleanCard({
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Long Press Logic
     isPointerDownRef.current = true;
-    // Only set capture if we want to track it, but for swipe cards be careful
-    // For now we try to detect hold without capturing aggressively unless needed
     e.currentTarget.setPointerCapture(e.pointerId);
     startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
+    pointerEventRef.current = e;
 
     longPressTimer.current = setTimeout(() => {
       if (isPointerDownRef.current) {
         setIsDragMode(true);
-        setSwiping(true); // Treat as swiping to prevent click
+        setSwiping(true);
+        console.log("Long press triggered in BooleanCard!");
         animate(scale, 1.05, { duration: 0.2 });
-        // animate(rotateZ, 2, { duration: 0.2 }); // small jiggle
 
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(50);
         }
+
+        // [Optimasi]: Mengatur touchAction ke 'none' secara manual ke elemen DOM.
+        // Lebih cepat daripada menunggu state update agar browser tidak sempat scroll.
+        if (cardRef.current) {
+          cardRef.current.style.touchAction = "none";
+        }
+
+        if (pointerEventRef.current) {
+          dragControls.start(pointerEventRef.current);
+        }
       }
-    }, 500); // 500ms hold
+    }, 500);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (isDragMode) return;
 
-    // If moved significantly, cancel long press
-    if (
-      Math.abs(e.clientX - startXRef.current) > 10 &&
-      longPressTimer.current
-    ) {
+    const deltaX = e.clientX - startXRef.current;
+    // Note: We don't check deltaY here manually in the timer cancel block
+    // to allow some vertical wiggle during long press on mobile.
+    // However, the browser might still trigger a pointercancel if it detects a scroll.
+    const threshold = 15;
+    if (Math.abs(deltaX) > threshold && longPressTimer.current) {
+      console.log(
+        `Long press in BooleanCard cancelled by horizontal movement: deltaX=${deltaX}`,
+      );
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
     isPointerDownRef.current = false;
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
+    if (cardRef.current) {
+      cardRef.current.style.touchAction = "pan-y";
     }
-    // If we were just clicking and not swiping/dragging, swiping state is handled by dragStart/End
+    if (longPressTimer.current) {
+      console.log(
+        `Pointer up/cancel/leave in BooleanCard. Event type: ${e.type}`,
+      );
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    pointerEventRef.current = null;
   };
 
-  const isDone = log?.status === LogCompletionType.COMPLETED;
+  const isDone = log?.status === LogCompletionType.COMPLETED || localDone;
   const isDraggable = phase === "idle";
 
   const handleCardClick = () => {
@@ -267,7 +347,8 @@ export function BooleanCard({
           zIndex: isDragMode ? 50 : 1,
         }}
         drag={isDragMode ? true : isDraggable ? "x" : false}
-        dragConstraints={isDragMode ? undefined : { left: 0, right: 0 }}
+        dragControls={dragControls}
+        dragListener={!isDragMode}
         dragElastic={isDragMode ? 0.5 : 0.7}
         onDragStart={() => setSwiping(true)}
         onDragEnd={handleDragEnd}
@@ -275,9 +356,10 @@ export function BooleanCard({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
-        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${
+        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${
           isDone
             ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
             : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
@@ -314,4 +396,4 @@ export function BooleanCard({
       </motion.div>
     </div>
   );
-}
+});

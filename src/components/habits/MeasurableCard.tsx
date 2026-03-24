@@ -1,8 +1,14 @@
 "use client";
 
 import { Habit, LogCompletion } from "@/types/habits";
-import { useMotionValue, useTransform, motion, animate } from "framer-motion";
-import { useRef, useState, useCallback, useEffect } from "react";
+import {
+  useMotionValue,
+  useTransform,
+  motion,
+  animate,
+  useDragControls,
+} from "framer-motion";
+import { useRef, useState, useCallback, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
 
 /* ─── Leaf type ─── */
@@ -59,7 +65,6 @@ function LeafSVG({ hue, side }: { hue: number; side: "top" | "bottom" }) {
 function FlowerSVG() {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      {/* Petals */}
       {[0, 60, 120, 180, 240, 300].map((angle, i) => (
         <ellipse
           key={i}
@@ -72,7 +77,6 @@ function FlowerSVG() {
           opacity="0.85"
         />
       ))}
-      {/* Center */}
       <circle cx="14" cy="14" r="4" fill="#facc15" />
       <circle cx="14" cy="14" r="2.5" fill="#f59e0b" />
     </svg>
@@ -88,7 +92,7 @@ interface MeasurableCardProps {
   onDragToggle?: (isDragging: boolean) => void;
 }
 
-export function MeasurableCard({
+export const MeasurableCard = memo(function MeasurableCard({
   habit,
   log,
   onSetValue,
@@ -96,15 +100,18 @@ export function MeasurableCard({
   onDragToggle,
 }: MeasurableCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const widthRef = useRef(0);
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [liveValue, setLiveValue] = useState(Number(log?.actualValue ?? 0));
+  const liveValueMV = useMotionValue(Number(log?.actualValue ?? 0));
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [petals, setPetals] = useState<Petal[]>([]);
   const [showFlower, setShowFlower] = useState(false);
   const startXRef = useRef(0);
+  const startYRef = useRef(0);
   const startValueRef = useRef(0);
   const hasDraggedRef = useRef(false);
+  const draggingRef = useRef(false);
   const prevSnapRef = useRef(Number(log?.actualValue ?? 0));
 
   // Drag to delete state
@@ -116,13 +123,18 @@ export function MeasurableCard({
   const scale = useMotionValue(1);
   const rotate = useMotionValue(0);
   const opacity = useMotionValue(1);
+  console.log("isDragMode: ", isDragMode);
+  // console.log("isDragging: ", dragging);
+
+  const dragControls = useDragControls();
+  const pointerEventRef = useRef<React.PointerEvent | null>(null);
 
   const fillPct = useMotionValue(0);
   const fillWidthStr = useTransform(fillPct, (v) => `${v}%`);
 
   const router = useRouter();
   const handleHeaderClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card expansion if any
+    e.stopPropagation();
     router.push(`/habits/${habit.id}`);
   };
 
@@ -130,18 +142,50 @@ export function MeasurableCard({
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);
 
-  /* ─── Vine/fill color: earthy brown → green ─── */
+  // [Efek Samping]: Penggunaan e.preventDefault() pada touchmove non-passive akan
+  // mematikan scroll bawaan browser (native scroll) sementara.
+  // Ini dilakukan agar browser tidak mencuri gesture sentuhan saat kita sedang
+  // menunggu timer Long Press (500ms) atau saat sedang melakukan dragging.
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // 1. Jika sudah dalam mode Drag to Delete atau sedang menggeser slider (Measurable),
+      // kita harus mengunci gesture agar tidak berubah jadi scroll halaman.
+      if (isDragMode || draggingRef.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // 2. Jika jari masih menempel (timer aktif) dan pergerakan masih sangat kecil (wiggle room),
+      // kita cegah browser untuk memulai scroll agar Long Press bisa terdeteksi dengan stabil.
+      if (longPressTimer.current) {
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - startXRef.current);
+        const dy = Math.abs(touch.clientY - startYRef.current);
+
+        // Jika jari hanya bergoyang < 10px, blokir scroll browser.
+        if (dx < 10 && dy < 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+      }
+    };
+
+    // Kita harus menggunakan { passive: false } agar preventDefault() diizinkan oleh browser.
+    card.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => card.removeEventListener("touchmove", handleTouchMove);
+  }, [isDragMode]);
+
   const vineBg = useTransform(fillPct, (v) => {
     if (v <= 0) return "rgba(0,0,0,0)";
     const t = v / 100;
-    // Brown-green gradient
     const r = Math.round(120 - 86 * t);
     const g = Math.round(100 + 80 * t);
     const b = Math.round(60 - 10 * t);
     return `rgba(${r},${g},${b},0.2)`;
   });
 
-  /* ─── Vine stem color ─── */
   const stemColor = useTransform(fillPct, (v) => {
     const t = v / 100;
     const r = Math.round(80 - 46 * t);
@@ -150,18 +194,18 @@ export function MeasurableCard({
     return `rgb(${r},${g},${b})`;
   });
 
-  const maxValue = Number(habit.targetValue ?? 100);
+  const maxValue = Number(habit.targetValue ?? 100) || 100;
   const step = 1;
-  const currentValue = Number(log?.actualValue ?? 0);
+  const currentValue = Number(log?.actualValue ?? 0) || 0;
 
   useEffect(() => {
-    setLiveValue(currentValue);
+    liveValueMV.set(currentValue);
     prevSnapRef.current = currentValue;
   }, [currentValue]);
 
   useEffect(() => {
     if (!dragging) {
-      animate(fillPct, Math.min(100, (currentValue / maxValue) * 100), {
+      animate(fillPct, Math.min(100, (currentValue / (maxValue || 1)) * 100), {
         type: "spring",
         stiffness: 120,
         damping: 20,
@@ -169,7 +213,6 @@ export function MeasurableCard({
     }
   }, [currentValue, maxValue, dragging, fillPct]);
 
-  // Show flower when at max
   useEffect(() => {
     setShowFlower(currentValue >= maxValue && currentValue > 0);
   }, [currentValue, maxValue]);
@@ -182,7 +225,6 @@ export function MeasurableCard({
     [step],
   );
 
-  /* ─── Spawn leaf ─── */
   const spawnLeaf = useCallback((pct: number) => {
     const id = ++leafId;
     const leaf: Leaf = {
@@ -190,23 +232,21 @@ export function MeasurableCard({
       x: pct,
       side: Math.random() > 0.5 ? "top" : "bottom",
       size: 0.7 + Math.random() * 0.5,
-      hue: 110 + Math.random() * 40, // green variations
+      hue: 110 + Math.random() * 40,
       delay: Math.random() * 0.1,
     };
-    setLeaves((prev) => [...prev.slice(-20), leaf]);
-    // Fade leaf after a while
+    setLeaves((prev) => [...prev.slice(-10), leaf]);
     setTimeout(() => {
       setLeaves((prev) => prev.filter((l) => l.id !== id));
     }, 2500);
   }, []);
 
-  /* ─── Spawn petals (max celebration) ─── */
   const spawnPetals = useCallback(() => {
     const newPetals: Petal[] = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 6; i++) {
       newPetals.push({
         id: ++petalId,
-        angle: (i / 12) * 360 + Math.random() * 20,
+        angle: (i / 6) * 360 + Math.random() * 20,
         distance: 30 + Math.random() * 50,
         size: 4 + Math.random() * 4,
         hue: 330 + Math.random() * 40,
@@ -219,62 +259,93 @@ export function MeasurableCard({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      // Long Press Logic
       isPointerDownRef.current = true;
       e.currentTarget.setPointerCapture(e.pointerId);
+      pointerEventRef.current = e;
 
       longPressTimer.current = setTimeout(() => {
         if (isPointerDownRef.current) {
-          setIsDragMode(true);
-          setDragging(false); // Cancel value dragging if it started
-          animate(scale, 1.05, { duration: 0.2 });
-          animate(rotate, 2, { duration: 0.2 });
+          if (pointerEventRef.current) {
+            setIsDragMode(true);
+            setDragging(false);
+            if (cardRef.current) {
+              widthRef.current = cardRef.current.getBoundingClientRect().width;
+            }
+            animate(scale, 1.05, { duration: 0.2 });
+            animate(rotate, 2, { duration: 0.2 });
 
-          if (typeof navigator !== "undefined" && navigator.vibrate) {
-            navigator.vibrate(50);
+            if (typeof navigator !== "undefined" && navigator.vibrate) {
+              navigator.vibrate(50);
+            }
+
+            // [Optimasi]: Mengatur touchAction secara imperatif ke 'none' agar perubahan
+            // lebih cepat dari render React, mencegah scroll saat mulai ditarik.
+            if (cardRef.current) {
+              cardRef.current.style.touchAction = "none";
+            }
+
+            dragControls.start(pointerEventRef.current);
           }
         }
-      }, 1000);
+      }, 500);
 
-      // Value Drag Logic
       if (expanded) return;
 
       startXRef.current = e.clientX;
+      startYRef.current = e.clientY;
       startValueRef.current = currentValue;
       hasDraggedRef.current = false;
       prevSnapRef.current = currentValue;
+      if (cardRef.current) {
+        widthRef.current = cardRef.current.getBoundingClientRect().width;
+      }
       setDragging(true);
+      draggingRef.current = true;
     },
-    [expanded, currentValue, scale, rotate],
+    [expanded, currentValue, scale, rotate, dragControls],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      // If we are in Drag Mode (Deleting), ignore value changes
       if (isDragMode) return;
 
       if (!dragging) return;
       const deltaX = e.clientX - startXRef.current;
+      const deltaY = e.clientY - startYRef.current;
 
-      // If moved significantly, cancel long press
-      if (Math.abs(deltaX) > 10 && longPressTimer.current) {
+      // If moved significantly horizontally, cancel long press
+      // Vertical movement is allowed a bit more to prevent accidental cancellation on touch screens
+      if (Math.abs(deltaX) > 15 && longPressTimer.current) {
         clearTimeout(longPressTimer.current);
         longPressTimer.current = null;
       }
 
-      if (!hasDraggedRef.current && Math.abs(deltaX) < 5) return;
+      if (!hasDraggedRef.current) {
+        // If movement is more vertical than horizontal, don't start dragging
+        if (Math.abs(deltaY) > Math.abs(deltaX) + 5) {
+          setDragging(false);
+          draggingRef.current = false;
+          return;
+        }
+        if (Math.abs(deltaX) < 10) return;
+      }
+
       hasDraggedRef.current = true;
 
       if (!cardRef.current) return;
-      const cardWidth = cardRef.current.getBoundingClientRect().width;
+      const cardWidth =
+        widthRef.current || cardRef.current.getBoundingClientRect().width;
+      if (cardWidth <= 0) return;
 
       const deltaValue = (deltaX / cardWidth) * maxValue;
       const raw = startValueRef.current + deltaValue;
-      const val = snapToStep(raw);
+      const val = Number.isFinite(raw)
+        ? snapToStep(raw)
+        : startValueRef.current;
 
       // Detect step change — spawn leaf
       if (val !== prevSnapRef.current) {
-        const pct = (val / maxValue) * 100;
+        const pct = (val / (maxValue || 1)) * 100;
         if (val > prevSnapRef.current) {
           // Growing — spawn leaf at new position
           spawnLeaf(pct);
@@ -283,7 +354,7 @@ export function MeasurableCard({
         prevSnapRef.current = val;
       }
 
-      setLiveValue(val);
+      liveValueMV.set(val);
       fillPct.set(Math.min(100, (val / maxValue) * 100));
     },
     [dragging, maxValue, snapToStep, fillPct, spawnLeaf, isDragMode],
@@ -291,51 +362,64 @@ export function MeasurableCard({
 
   const handlePointerUp = useCallback(() => {
     isPointerDownRef.current = false;
+    if (cardRef.current) {
+      cardRef.current.style.touchAction = "pan-y";
+    }
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
 
     if (isDragMode) {
-      // Logic handled by onDragEnd of motion.div
+      pointerEventRef.current = null;
       return;
     }
 
-    if (!dragging) return;
+    if (!dragging) {
+      pointerEventRef.current = null;
+      return;
+    }
     if (hasDraggedRef.current) {
-      // Only update if value actually changed
-      if (liveValue !== startValueRef.current) {
-        onSetValue({ actualValue: liveValue });
+      const finalValue = liveValueMV.get();
+      if (finalValue !== startValueRef.current) {
+        onSetValue({ actualValue: finalValue });
       }
-      if (liveValue >= maxValue) {
+      if (finalValue >= maxValue) {
         spawnPetals();
       }
     }
     setDragging(false);
+    draggingRef.current = false;
     hasDraggedRef.current = false;
-  }, [dragging, liveValue, maxValue, onSetValue, spawnPetals, isDragMode]);
+    pointerEventRef.current = null;
+  }, [dragging, liveValueMV, maxValue, onSetValue, spawnPetals, isDragMode]);
 
   const handleDragEnd = (
     _: unknown,
-    info: { point: { x: number; y: number } },
+    info: {
+      point: { x: number; y: number };
+      offset: { x: number; y: number };
+    },
   ) => {
     if (isDragMode) {
       const windowHeight =
         typeof window !== "undefined" ? window.innerHeight : 800;
       const dropY = info.point.y;
 
-      // Check if dropped in trash zone
-      if (dropY > windowHeight - 150) {
+      console.log("Drag ended. dropY:", dropY, "windowHeight:", windowHeight);
+
+      const isMovingUp = info.offset.y < -30;
+      if (dropY > windowHeight - 100 && !isMovingUp) {
+        console.log("Delete triggered!");
         onDelete?.();
-        animate(scale, 0, { duration: 0.3 });
-        animate(opacity, 0, { duration: 0.3 });
       } else {
-        // Reset
-        setIsDragMode(false);
-        animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
-        animate(scale, 1, { duration: 0.2 });
-        animate(rotate, 0, { duration: 0.2 });
+        console.log("Drag cancelled - moved up or not in trash zone.");
       }
+
+      setIsDragMode(false);
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
+      animate(scale, 1, { duration: 0.2 });
+      animate(rotate, 0, { duration: 0.2 });
     }
   };
 
@@ -350,29 +434,32 @@ export function MeasurableCard({
     if (isDragMode) return;
     const newVal = Math.max(0, currentValue + delta);
     onSetValue({ actualValue: newVal });
-    setLiveValue(newVal);
+    liveValueMV.set(newVal);
     if (delta > 0) {
-      spawnLeaf(Math.min(100, (newVal / maxValue) * 100));
+      spawnLeaf(Math.min(100, (newVal / (maxValue || 1)) * 100));
     }
     if (newVal >= maxValue) {
       spawnPetals();
     }
   }
 
-  const displayValue = dragging ? liveValue : currentValue;
+  const displayValue = dragging ? liveValueMV.get() : currentValue;
   const isDone = currentValue > 0;
   const isMax = displayValue >= maxValue;
-
-  // Compute how many persistent vine segments to show based on fill
-  const segmentCount = Math.floor((displayValue / maxValue) * 8);
+  const segmentCount = Math.max(
+    0,
+    Math.min(10, Math.floor((displayValue / (maxValue || 1)) * 8) || 0),
+  );
 
   return (
     <div className="relative">
       <motion.div
         ref={cardRef}
         style={{ x, y, scale, rotate, opacity, zIndex: isDragMode ? 50 : 1 }}
-        drag={true}
-        dragListener={true}
+        drag={isDragMode ? true : false}
+        dragControls={dragControls}
+        dragListener={!isDragMode}
+        dragDirectionLock={!isDragMode}
         dragConstraints={
           isDragMode ? undefined : { left: 0, right: 0, top: 0, bottom: 0 }
         }
@@ -381,17 +468,23 @@ export function MeasurableCard({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onPointerMove={handlePointerMove}
         onClick={handleTap}
-        className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 touch-none ${
+        className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 ${
+          isDragMode ? "touch-none" : "touch-pan-y"
+        } ${
           isMax
             ? "border-green-400 bg-gradient-to-r from-green-50/60 to-emerald-50/60 dark:border-green-700 dark:from-green-950/30 dark:to-emerald-950/30"
             : isDone
               ? "border-green-200/60 bg-green-50/20 dark:border-green-900/60 dark:bg-green-950/10"
               : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-        } ${isDragMode ? "shadow-xl ring-2 ring-red-500/50 cursor-grabbing" : "cursor-grab"}`}
+        } ${
+          isDragMode
+            ? "shadow-xl ring-2 ring-red-500/50 cursor-grabbing"
+            : "cursor-grab"
+        }`}
       >
-        {/* Soil/earth gradient at bottom */}
         <div
           className="absolute bottom-0 left-0 right-0 h-[3px] pointer-events-none"
           style={{
@@ -400,8 +493,6 @@ export function MeasurableCard({
               : "transparent",
           }}
         />
-
-        {/* Vine fill area (green growth background) */}
         <motion.div
           className="absolute bottom-0 left-0 top-0 pointer-events-none"
           style={{
@@ -409,8 +500,6 @@ export function MeasurableCard({
             background: vineBg,
           }}
         />
-
-        {/* Content Row */}
         <div className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4">
           <span
             onClick={handleHeaderClick}
@@ -443,10 +532,7 @@ export function MeasurableCard({
                 </span>
               </div>
             </div>
-
-            {/* Progress bar line */}
             <div className="mt-2 h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden relative">
-              {/* Background ticks */}
               {[...Array(9)].map((_, i) => (
                 <div
                   key={i}
@@ -454,16 +540,11 @@ export function MeasurableCard({
                   style={{ left: `${(i + 1) * 10}%` }}
                 />
               ))}
-
-              {/* Stem (vine main line) */}
               <motion.div
                 className="absolute top-1/2 left-0 h-[2px] -translate-y-1/2 rounded-full origin-left"
                 style={{ width: fillWidthStr, backgroundColor: stemColor }}
               />
-
-              {/* Leaves spawning on the vine */}
               <div className="absolute inset-0 pointer-events-none overflow-visible">
-                {/* Persistent leaves based on segment */}
                 {[...Array(segmentCount)].map((_, i) => (
                   <motion.div
                     key={`static-${i}`}
@@ -478,8 +559,6 @@ export function MeasurableCard({
                     <LeafSVG hue={120} side={i % 2 === 0 ? "top" : "bottom"} />
                   </motion.div>
                 ))}
-
-                {/* Ephemeral floating leaves */}
                 {leaves.map((leaf) => (
                   <motion.div
                     key={leaf.id}
@@ -501,7 +580,6 @@ export function MeasurableCard({
                 ))}
               </div>
             </div>
-
             <p className="mt-2 text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 flex justify-between">
               <span>
                 {isDragMode
@@ -520,8 +598,6 @@ export function MeasurableCard({
             </p>
           </div>
         </div>
-
-        {/* Flower Bloom Overlay (when maxed) */}
         {showFlower && !dragging && (
           <motion.div
             className="absolute pointer-events-none z-20"
@@ -545,7 +621,6 @@ export function MeasurableCard({
             >
               <FlowerSVG />
             </motion.div>
-            {/* Petals Explosion */}
             {petals.map((p) => (
               <motion.div
                 key={p.id}
@@ -602,4 +677,4 @@ export function MeasurableCard({
       </motion.div>
     </div>
   );
-}
+});
