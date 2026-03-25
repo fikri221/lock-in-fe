@@ -11,16 +11,6 @@ import {
 import { useRef, useState, useCallback, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
 
-/* ─── Leaf type ─── */
-interface Leaf {
-  id: number;
-  x: number; // position along card (%)
-  side: "top" | "bottom";
-  size: number; // scale factor
-  hue: number; // green hue variation
-  delay: number;
-}
-
 /* ─── Petal type (for flower bloom at max) ─── */
 interface Petal {
   id: number;
@@ -31,35 +21,7 @@ interface Petal {
   delay: number;
 }
 
-let leafId = 0;
 let petalId = 0;
-
-/* ─── Leaf SVG ─── */
-function LeafSVG({ hue, side }: { hue: number; side: "top" | "bottom" }) {
-  const flip = side === "bottom" ? "scaleY(-1)" : "";
-  return (
-    <svg
-      width="18"
-      height="14"
-      viewBox="0 0 18 14"
-      fill="none"
-      style={{ transform: flip }}
-    >
-      <path
-        d="M1 13C1 13 4 1 17 1C17 1 14 6 9 9C4 12 1 13 1 13Z"
-        fill={`hsl(${hue}, 70%, 45%)`}
-        stroke={`hsl(${hue}, 60%, 35%)`}
-        strokeWidth="0.5"
-      />
-      <path
-        d="M1 13C5 8 10 4 17 1"
-        stroke={`hsl(${hue}, 50%, 55%)`}
-        strokeWidth="0.5"
-        opacity="0.6"
-      />
-    </svg>
-  );
-}
 
 /* ─── Flower SVG ─── */
 function FlowerSVG() {
@@ -108,7 +70,6 @@ export const MeasurableCard = memo(function MeasurableCard({
   );
   const liveValueMV = useMotionValue(Number(log?.actualValue ?? 0));
   const roundedValue = useTransform(liveValueMV, Math.round);
-  const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [petals, setPetals] = useState<Petal[]>([]);
   const [showFlower, setShowFlower] = useState(false);
   const startXRef = useRef(0);
@@ -231,22 +192,6 @@ export const MeasurableCard = memo(function MeasurableCard({
     [step],
   );
 
-  const spawnLeaf = useCallback((pct: number) => {
-    const id = ++leafId;
-    const leaf: Leaf = {
-      id,
-      x: pct,
-      side: Math.random() > 0.5 ? "top" : "bottom",
-      size: 0.7 + Math.random() * 0.5,
-      hue: 110 + Math.random() * 40,
-      delay: Math.random() * 0.1,
-    };
-    setLeaves((prev) => [...prev.slice(-10), leaf]);
-    setTimeout(() => {
-      setLeaves((prev) => prev.filter((l) => l.id !== id));
-    }, 2500);
-  }, []);
-
   const spawnPetals = useCallback(() => {
     const newPetals: Petal[] = [];
     for (let i = 0; i < 6; i++) {
@@ -351,9 +296,6 @@ export const MeasurableCard = memo(function MeasurableCard({
 
       // Detect step change — spawn leaf
       if (val !== prevSnapRef.current) {
-        if (val > prevSnapRef.current) {
-          spawnLeaf(Math.min(100, (val / (maxValue || 1)) * 100));
-        }
         prevSnapRef.current = val;
         setDragDisplayVal(val);
       }
@@ -361,15 +303,7 @@ export const MeasurableCard = memo(function MeasurableCard({
       liveValueMV.set(clampedRaw);
       fillPct.set(Math.min(100, (clampedRaw / (maxValue || 1)) * 100));
     },
-    [
-      dragging,
-      maxValue,
-      snapToStep,
-      fillPct,
-      spawnLeaf,
-      isDragMode,
-      liveValueMV,
-    ],
+    [dragging, maxValue, snapToStep, fillPct, isDragMode, liveValueMV],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -481,9 +415,6 @@ export const MeasurableCard = memo(function MeasurableCard({
       damping: 25,
     });
 
-    if (delta > 0) {
-      spawnLeaf(Math.min(100, (newVal / (maxValue || 1)) * 100));
-    }
     if (newVal >= maxValue && currentValue < maxValue) {
       spawnPetals();
     }
@@ -600,28 +531,7 @@ export const MeasurableCard = memo(function MeasurableCard({
                         i % 2 === 0 ? "-20deg" : "20deg"
                       }) scale(0.6)`,
                     }}
-                  >
-                    <LeafSVG hue={120} side={i % 2 === 0 ? "top" : "bottom"} />
-                  </motion.div>
-                ))}
-                {leaves.map((leaf) => (
-                  <motion.div
-                    key={leaf.id}
-                    className="absolute top-1/2 left-0 -translate-y-1/2"
-                    initial={{ opacity: 0, scale: 0, x: `${leaf.x}%`, y: 0 }}
-                    animate={{
-                      opacity: [0, 1, 1, 0],
-                      scale: leaf.size,
-                      y: leaf.side === "top" ? -10 : 10,
-                      rotate: leaf.side === "top" ? -20 : 20,
-                    }}
-                    transition={{
-                      duration: 0.6 + leaf.delay,
-                      ease: "easeOut",
-                    }}
-                  >
-                    <LeafSVG hue={leaf.hue} side={leaf.side} />
-                  </motion.div>
+                  ></motion.div>
                 ))}
               </div>
             </div>
