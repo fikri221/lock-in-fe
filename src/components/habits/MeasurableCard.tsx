@@ -103,7 +103,11 @@ export const MeasurableCard = memo(function MeasurableCard({
   const widthRef = useRef(0);
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [dragDisplayVal, setDragDisplayVal] = useState(
+    Number(log?.actualValue ?? 0),
+  );
   const liveValueMV = useMotionValue(Number(log?.actualValue ?? 0));
+  const roundedValue = useTransform(liveValueMV, Math.round);
   const [leaves, setLeaves] = useState<Leaf[]>([]);
   const [petals, setPetals] = useState<Petal[]>([]);
   const [showFlower, setShowFlower] = useState(false);
@@ -199,19 +203,21 @@ export const MeasurableCard = memo(function MeasurableCard({
   const currentValue = Number(log?.actualValue ?? 0) || 0;
 
   useEffect(() => {
-    liveValueMV.set(currentValue);
-    prevSnapRef.current = currentValue;
-  }, [currentValue]);
-
-  useEffect(() => {
     if (!dragging) {
+      setDragDisplayVal(currentValue);
+      prevSnapRef.current = currentValue;
+      animate(liveValueMV, currentValue, {
+        type: "spring",
+        stiffness: 120,
+        damping: 20,
+      });
       animate(fillPct, Math.min(100, (currentValue / (maxValue || 1)) * 100), {
         type: "spring",
         stiffness: 120,
         damping: 20,
       });
     }
-  }, [currentValue, maxValue, dragging, fillPct]);
+  }, [currentValue, maxValue, dragging, fillPct, liveValueMV]);
 
   useEffect(() => {
     setShowFlower(currentValue >= maxValue && currentValue > 0);
@@ -296,6 +302,7 @@ export const MeasurableCard = memo(function MeasurableCard({
       startValueRef.current = currentValue;
       hasDraggedRef.current = false;
       prevSnapRef.current = currentValue;
+      setDragDisplayVal(currentValue);
       if (cardRef.current) {
         widthRef.current = cardRef.current.getBoundingClientRect().width;
       }
@@ -339,25 +346,30 @@ export const MeasurableCard = memo(function MeasurableCard({
 
       const deltaValue = (deltaX / cardWidth) * maxValue;
       const raw = startValueRef.current + deltaValue;
-      const val = Number.isFinite(raw)
-        ? snapToStep(raw)
-        : startValueRef.current;
+      const clampedRaw = Math.max(0, raw);
+      const val = snapToStep(clampedRaw);
 
       // Detect step change — spawn leaf
       if (val !== prevSnapRef.current) {
-        const pct = (val / (maxValue || 1)) * 100;
         if (val > prevSnapRef.current) {
-          // Growing — spawn leaf at new position
-          spawnLeaf(pct);
+          spawnLeaf(Math.min(100, (val / (maxValue || 1)) * 100));
         }
-        // If shrinking, leaves naturally thin out via timeout
         prevSnapRef.current = val;
+        setDragDisplayVal(val);
       }
 
-      liveValueMV.set(val);
-      fillPct.set(Math.min(100, (val / maxValue) * 100));
+      liveValueMV.set(clampedRaw);
+      fillPct.set(Math.min(100, (clampedRaw / (maxValue || 1)) * 100));
     },
-    [dragging, maxValue, snapToStep, fillPct, spawnLeaf, isDragMode],
+    [
+      dragging,
+      maxValue,
+      snapToStep,
+      fillPct,
+      spawnLeaf,
+      isDragMode,
+      liveValueMV,
+    ],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -379,11 +391,25 @@ export const MeasurableCard = memo(function MeasurableCard({
       return;
     }
     if (hasDraggedRef.current) {
-      const finalValue = liveValueMV.get();
+      const finalRaw = liveValueMV.get();
+      const finalValue = snapToStep(finalRaw);
+
+      animate(liveValueMV, finalValue, {
+        type: "spring",
+        stiffness: 600,
+        damping: 30,
+      });
+      animate(fillPct, Math.min(100, (finalValue / (maxValue || 1)) * 100), {
+        type: "spring",
+        stiffness: 600,
+        damping: 30,
+      });
+      setDragDisplayVal(finalValue);
+
       if (finalValue !== startValueRef.current) {
         onSetValue({ actualValue: finalValue });
       }
-      if (finalValue >= maxValue) {
+      if (finalValue >= maxValue && startValueRef.current < maxValue) {
         spawnPetals();
       }
     }
@@ -391,7 +417,16 @@ export const MeasurableCard = memo(function MeasurableCard({
     draggingRef.current = false;
     hasDraggedRef.current = false;
     pointerEventRef.current = null;
-  }, [dragging, liveValueMV, maxValue, onSetValue, spawnPetals, isDragMode]);
+  }, [
+    dragging,
+    liveValueMV,
+    maxValue,
+    onSetValue,
+    spawnPetals,
+    isDragMode,
+    fillPct,
+    snapToStep,
+  ]);
 
   const handleDragEnd = (
     _: unknown,
@@ -434,21 +469,31 @@ export const MeasurableCard = memo(function MeasurableCard({
     if (isDragMode) return;
     const newVal = Math.max(0, currentValue + delta);
     onSetValue({ actualValue: newVal });
-    liveValueMV.set(newVal);
+    setDragDisplayVal(newVal);
+    animate(liveValueMV, newVal, {
+      type: "spring",
+      stiffness: 300,
+      damping: 25,
+    });
+    animate(fillPct, Math.min(100, (newVal / (maxValue || 1)) * 100), {
+      type: "spring",
+      stiffness: 300,
+      damping: 25,
+    });
+
     if (delta > 0) {
       spawnLeaf(Math.min(100, (newVal / (maxValue || 1)) * 100));
     }
-    if (newVal >= maxValue) {
+    if (newVal >= maxValue && currentValue < maxValue) {
       spawnPetals();
     }
   }
 
-  const displayValue = dragging ? liveValueMV.get() : currentValue;
-  const isDone = currentValue > 0;
-  const isMax = displayValue >= maxValue;
+  const isDone = dragDisplayVal > 0;
+  const isMax = dragDisplayVal >= maxValue;
   const segmentCount = Math.max(
     0,
-    Math.min(10, Math.floor((displayValue / (maxValue || 1)) * 8) || 0),
+    Math.min(10, Math.floor((dragDisplayVal / (maxValue || 1)) * 8) || 0),
   );
 
   return (
@@ -518,15 +563,15 @@ export const MeasurableCard = memo(function MeasurableCard({
                 {habit.name}
               </p>
               <div className="flex items-baseline gap-1">
-                <span
+                <motion.span
                   className={`text-lg font-bold font-mono transition-colors duration-300 ${
                     isDone
                       ? "text-emerald-600 dark:text-emerald-400"
                       : "text-zinc-600 dark:text-zinc-400"
                   }`}
                 >
-                  {displayValue}
-                </span>
+                  {roundedValue}
+                </motion.span>
                 <span className="text-xs text-zinc-400 dark:text-zinc-500">
                   / {maxValue} {habit.targetUnit || ""}
                 </span>
