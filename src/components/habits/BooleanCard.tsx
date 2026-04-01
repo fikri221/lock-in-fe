@@ -319,7 +319,7 @@ export const BooleanCard = memo(function BooleanCard({
   return (
     <div className="relative">
       {phase === "idle" && !isDragMode && (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-6 text-sm font-semibold">
+        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-between px-6 text-sm font-semibold">
           <motion.span
             style={{ opacity: leftOpacity }}
             className="text-red-500"
@@ -343,7 +343,6 @@ export const BooleanCard = memo(function BooleanCard({
           rotate: finalRotate,
           scale,
           opacity,
-          backgroundColor: phase === "idle" ? bg : undefined,
           zIndex: isDragMode ? 50 : 1,
         }}
         drag={isDragMode ? true : isDraggable ? "x" : false}
@@ -359,14 +358,20 @@ export const BooleanCard = memo(function BooleanCard({
         onPointerCancel={handlePointerUp}
         whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
-        className={`relative z-10 flex cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${
+        className={`relative z-10 flex overflow-hidden cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${
           isDone
             ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30"
             : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
         } ${isDragMode ? "shadow-xl ring-2 ring-red-500/50 cursor-grabbing" : "cursor-grab"}`}
       >
-        <span className="text-2xl sm:text-3xl shrink-0">{habit.icon}</span>
-        <div className="flex-1 min-w-0">
+        <motion.div
+          className="pointer-events-none absolute inset-0 rounded-2xl"
+          style={{ backgroundColor: phase === "idle" ? bg : undefined }}
+        />
+        <span className="text-2xl sm:text-3xl shrink-0 relative z-10">
+          {habit.icon}
+        </span>
+        <div className="flex-1 min-w-0 relative z-10">
           <p
             className={`text-sm sm:text-base font-semibold truncate ${
               isDone
