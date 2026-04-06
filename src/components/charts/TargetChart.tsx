@@ -72,14 +72,14 @@ export default function TargetChart({ habitId }: TargetChartProps) {
             return (
               <div key={key} className="flex items-center sm:gap-4">
                 {/* Label */}
-                <div className="w-20 text-sm font-medium text-gray-700">
+                <div className="w-20 text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   {label}
                 </div>
 
                 {/* Progress Bar */}
-                <div className="flex-1 bg-gray-100 rounded-full h-10 overflow-hidden relative">
+                <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-10 overflow-hidden relative">
                   <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500 ease-out"
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500 ease-out"
                     style={{ width: `${percentage}%` }}
                   />
                   {/* Value Label inside bar */}
@@ -88,31 +88,31 @@ export default function TargetChart({ habitId }: TargetChartProps) {
                       className={
                         percentage > 10
                           ? "text-white font-bold"
-                          : "text-gray-700 font-bold"
+                          : "text-zinc-700 dark:text-zinc-300 font-bold"
                       }
                     >
                       {periodData.actual}
                     </span>
                     <div className="md:hidden">
-                      <span className="text-gray-500 mx-1">/</span>
-                      <span className="text-gray-600">
+                      <span className="text-zinc-500 dark:text-zinc-400 mx-1">/</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">
                         {formatNumber(periodData.target)}
                       </span>
-                      <span className="text-gray-500 mx-1">{data.unit}</span>
+                      <span className="text-zinc-500 dark:text-zinc-400 mx-1">{data.unit}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Target Value */}
                 <div className="hidden md:block w-24 text-right text-sm">
-                  <span className="font-bold text-gray-900">
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
                     {formatNumber(periodData.actual)}
                   </span>
-                  <span className="text-gray-500 mx-1">/</span>
-                  <span className="text-gray-600">
+                  <span className="text-zinc-500 dark:text-zinc-400 mx-1">/</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
                     {formatNumber(periodData.target)}
                   </span>
-                  <span className="text-gray-500 mx-1">{data.unit}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400 mx-1">{data.unit}</span>
                 </div>
               </div>
             );

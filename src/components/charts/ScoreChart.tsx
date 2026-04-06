@@ -38,6 +38,8 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<ChartPeriod>("day");
 
+  const [isDark, setIsDark] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,6 +60,18 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
       }
     };
     fetchData();
+
+    // Theme detection
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    checkDark();
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
   }, [habitId, period]);
 
   const chartData = useMemo(() => {
@@ -70,15 +84,22 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
             y: point.score,
             label: point.label,
           })),
-          backgroundColor: "rgba(34, 197, 94, 0.2)",
-          borderColor: "rgba(34, 197, 94, 1)", // green-500
-          borderWidth: 2,
-          tension: 0.1,
+          backgroundColor: isDark
+            ? "rgba(16, 185, 129, 0.2)"
+            : "rgba(16, 185, 129, 0.1)",
+          borderColor: "#10b981", // emerald-500
+          borderWidth: 3,
+          tension: 0.4,
           fill: true,
+          pointBackgroundColor: "#10b981",
+          pointBorderColor: isDark ? "#09090b" : "#ffffff",
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
         },
       ],
     };
-  }, [data]);
+  }, [data, isDark]);
 
   const options: ChartOptions<"line"> = useMemo(
     () => ({
@@ -86,9 +107,17 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: "top",
+          display: false,
         },
         tooltip: {
+          backgroundColor: isDark ? "#18181b" : "#ffffff",
+          titleColor: isDark ? "#f4f4f5" : "#18181b",
+          bodyColor: isDark ? "#a1a1aa" : "#71717a",
+          borderColor: isDark ? "#27272a" : "#e4e4e7",
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: false,
           callbacks: {
             label: (context: TooltipItem<"line">) => {
               const raw = context.raw as {
@@ -110,6 +139,10 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
             display: false,
           },
           ticks: {
+            color: isDark ? "#71717a" : "#a1a1aa",
+            font: {
+              size: 11,
+            },
             callback: (value) => {
               return new Date(value as number).toLocaleDateString(undefined, {
                 month: "short",
@@ -118,23 +151,26 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
             },
           },
           grid: {
-            color: "rgba(0, 0, 0, 0.05)",
+            display: false,
           },
         },
         y: {
           min: 0,
           max: 100,
-          title: {
-            display: true,
-            text: "Score (%)",
+          ticks: {
+            color: isDark ? "#71717a" : "#a1a1aa",
+            font: {
+              size: 11,
+            },
+            stepSize: 20,
           },
           grid: {
-            color: "rgba(0, 0, 0, 0.05)",
+            color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
           },
         },
       },
     }),
-    [],
+    [isDark],
   );
 
   if (loading) {

@@ -101,15 +101,15 @@ export default function CalendarChart({
 
   // Get color intensity based on value
   const getColor = (value: number | undefined) => {
-    if (!value || value === 0) return "bg-gray-200";
+    if (!value || value === 0) return "bg-zinc-100 dark:bg-zinc-800";
 
     // Determine intensity levels (adjust thresholds as needed)
     const percentage = (value / targetValue) * 100;
 
-    if (percentage >= 75) return "bg-green-600";
-    if (percentage >= 50) return "bg-green-400";
-    if (percentage >= 25) return "bg-green-200";
-    return "bg-green-200";
+    if (percentage >= 75) return "bg-emerald-600 dark:bg-emerald-500";
+    if (percentage >= 50) return "bg-emerald-500 dark:bg-emerald-600";
+    if (percentage >= 25) return "bg-emerald-300 dark:bg-emerald-700";
+    return "bg-emerald-200 dark:bg-emerald-800";
   };
 
   const { grid, monthHeaders } = useMemo(() => {
@@ -180,7 +180,7 @@ export default function CalendarChart({
               {monthHeaders.map((header, idx) => (
                 <div
                   key={idx}
-                  className="absolute text-xs font-medium text-gray-600 whitespace-nowrap"
+                  className="absolute text-xs font-medium text-zinc-500 dark:text-zinc-400 whitespace-nowrap"
                   style={{
                     left: `${OFFSET + header.weekIndex * STRIDE}px`,
                   }}
@@ -199,7 +199,7 @@ export default function CalendarChart({
                 {dayLabels.map((day, i) => (
                   <div
                     key={day}
-                    className={`h-4 text-xs text-gray-500 flex items-center w-8 justify-end`}
+                    className={`h-4 text-xs text-zinc-400 dark:text-zinc-500 flex items-center w-8 justify-end`}
                   >
                     {i % 2 === 0 && day}
                   </div>
@@ -220,7 +220,7 @@ export default function CalendarChart({
                       return (
                         <div
                           key={dateStr}
-                          className={`${CELL_SIZE} rounded-sm ${getColor(value)} hover:ring-2 hover:ring-blue-500 cursor-pointer transition-all`}
+                          className={`${CELL_SIZE} rounded-sm ${getColor(value)} hover:ring-2 hover:ring-emerald-500 cursor-pointer transition-all`}
                           onMouseEnter={(e) => {
                             setHoveredDate(dateStr);
                             setHoveredPosition({ x: e.clientX, y: e.clientY });
@@ -235,13 +235,13 @@ export default function CalendarChart({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-2 mt-6 text-xs text-gray-600 pl-10">
+            <div className="flex items-center gap-2 mt-6 text-xs text-zinc-500 dark:text-zinc-400 pl-10">
               <span>Less</span>
               <div className={`flex ${GAP_CLASS}`}>
-                <div className={`${CELL_SIZE} bg-gray-200 rounded-sm`} />
-                <div className={`${CELL_SIZE} bg-green-200 rounded-sm`} />
-                <div className={`${CELL_SIZE} bg-green-400 rounded-sm`} />
-                <div className={`${CELL_SIZE} bg-green-600 rounded-sm`} />
+                <div className={`${CELL_SIZE} bg-zinc-100 dark:bg-zinc-800 rounded-sm`} />
+                <div className={`${CELL_SIZE} bg-emerald-200 dark:bg-emerald-800 rounded-sm`} />
+                <div className={`${CELL_SIZE} bg-emerald-400 dark:bg-emerald-600 rounded-sm`} />
+                <div className={`${CELL_SIZE} bg-emerald-600 dark:bg-emerald-400 rounded-sm`} />
               </div>
               <span>More</span>
             </div>

@@ -16,13 +16,13 @@ export default function HabitCharts({ habitId }: HabitChartsProps) {
   return (
     <div className="space-y-6">
       {/* First row: Target and Score */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <TargetChart habitId={habitId} />
         <ScoreChart habitId={habitId} />
       </div>
 
       {/* Second row: History and Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* <HistoryChart habitId={habitId} /> */}
         <CalendarChart habitId={habitId} />
       </div>
