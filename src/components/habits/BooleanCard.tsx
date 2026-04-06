@@ -221,6 +221,7 @@ export const BooleanCard = memo(function BooleanCard({
       }
 
       setIsDragMode(false);
+      setSwiping(false);
       animate(x, 0, { type: "spring", stiffness: 300, damping: 30 });
       animate(y, 0, { type: "spring", stiffness: 300, damping: 30 });
       animate(scale, 1, { duration: 0.2 });

@@ -88,8 +88,6 @@ export const MeasurableCard = memo(function MeasurableCard({
   const scale = useMotionValue(1);
   const rotate = useMotionValue(0);
   const opacity = useMotionValue(1);
-  console.log("isDragMode: ", isDragMode);
-  // console.log("isDragging: ", dragging);
 
   const dragControls = useDragControls();
   const pointerEventRef = useRef<React.PointerEvent | null>(null);
@@ -477,11 +475,7 @@ export const MeasurableCard = memo(function MeasurableCard({
           }}
         />
         <div className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4">
-          <span
-            onClick={handleHeaderClick}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="text-2xl sm:text-3xl shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all"
-          >
+          <span className="text-2xl sm:text-3xl shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all">
             {habit.icon}
           </span>
           <div className="flex-1 min-w-0">
