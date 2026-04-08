@@ -392,9 +392,11 @@ export const MeasurableCard = memo(function MeasurableCard({
 
   function handleTap() {
     if (isDragMode) return;
-    if (!hasDraggedRef.current) {
-      setExpanded(!expanded);
-    }
+
+    // WORK ON IT LATER
+    // if (!hasDraggedRef.current) {
+    setExpanded(false);
+    // }
   }
 
   function adjustValue(delta: number) {

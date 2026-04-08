@@ -119,15 +119,23 @@ export default function ScoreChart({ habitId }: ScoreChartProps) {
           cornerRadius: 8,
           displayColors: false,
           callbacks: {
+            title: (context: TooltipItem<"line">[]) => {
+              const raw = context[0].raw as { x: number };
+              return new Date(raw.x).toLocaleDateString(undefined, {
+                weekday: "long",
+              });
+            },
             label: (context: TooltipItem<"line">) => {
               const raw = context.raw as {
                 x: number;
                 y: number;
                 label?: string;
               };
-              return `${raw.label || new Date(raw.x).toLocaleDateString()}: ${
-                raw.y
-              }%`;
+              const dateStr = new Date(raw.x).toLocaleDateString(undefined, {
+                month: "long",
+                day: "numeric",
+              });
+              return `${dateStr}: ${raw.y}%`;
             },
           },
         },
