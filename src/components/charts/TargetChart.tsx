@@ -61,7 +61,7 @@ export default function TargetChart({ habitId }: TargetChartProps) {
       error={error || undefined}
     >
       {data && (
-        <div className="space-y-3">
+        <div className="flex justify-between items-end gap-2 sm:gap-4 mt-6 h-64">
           {periods.map(({ key, label }) => {
             const periodData = data[key];
             const percentage =
@@ -70,49 +70,38 @@ export default function TargetChart({ habitId }: TargetChartProps) {
                 : 0;
 
             return (
-              <div key={key} className="flex items-center sm:gap-4">
-                {/* Label */}
-                <div className="w-20 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  {label}
-                </div>
-
-                {/* Progress Bar */}
-                <div className="flex-1 bg-zinc-100 dark:bg-zinc-800 rounded-full h-10 overflow-hidden relative">
-                  <div
-                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500 ease-out"
-                    style={{ width: `${percentage}%` }}
-                  />
-                  {/* Value Label inside bar */}
-                  <div className="absolute inset-0 flex items-center px-4 text-sm">
-                    <span
-                      className={
-                        percentage > 10
-                          ? "text-white font-bold"
-                          : "text-zinc-700 dark:text-zinc-300 font-bold"
-                      }
-                    >
-                      {periodData.actual}
-                    </span>
-                    <div className="md:hidden">
-                      <span className="text-zinc-500 dark:text-zinc-400 mx-1">/</span>
-                      <span className="text-zinc-600 dark:text-zinc-400">
-                        {formatNumber(periodData.target)}
-                      </span>
-                      <span className="text-zinc-500 dark:text-zinc-400 mx-1">{data.unit}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Target Value */}
-                <div className="hidden md:block w-24 text-right text-sm">
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              <div
+                key={key}
+                className="flex flex-col items-center flex-1 h-full justify-end group"
+              >
+                {/* Value Label (Top) */}
+                <div className="text-center mb-2 flex flex-col items-center justify-end h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:opacity-100">
+                  <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     {formatNumber(periodData.actual)}
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400 mx-1">/</span>
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    {formatNumber(periodData.target)}
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    / {formatNumber(periodData.target)} {data.unit}
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400 mx-1">{data.unit}</span>
+                </div>
+
+                {/* Vertical Progress Bar */}
+                <div className="w-12 sm:w-16 bg-zinc-100 dark:bg-zinc-800 rounded-xl h-32 sm:h-40 overflow-hidden relative flex items-end justify-center shadow-inner">
+                  <div
+                    className="w-full bg-gradient-to-t from-emerald-400 to-emerald-500 transition-all duration-700 ease-out rounded-b-xl rounded-t-sm"
+                    style={{ height: `${percentage}%` }}
+                  />
+
+                  {/* Percentage Indicator inside or above */}
+                  {percentage > 0 && (
+                    <div className="absolute bottom-2 text-[10px] sm:text-xs font-bold text-white drop-shadow-md">
+                      {Math.round(percentage)}%
+                    </div>
+                  )}
+                </div>
+
+                {/* Label (Bottom) */}
+                <div className="mt-3 text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 text-center">
+                  {label}
                 </div>
               </div>
             );
