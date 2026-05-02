@@ -25,9 +25,11 @@ export default function FrequencyChart({ habitId }: FrequencyChartProps) {
         const chartData = await chartsApi.getFrequencyChart(habitId);
         setData(chartData);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         setError(
-          err?.response?.data?.message || "Failed to load frequency data",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err as any)?.response?.data?.message ||
+            "Failed to load frequency data",
         );
       } finally {
         setLoading(false);

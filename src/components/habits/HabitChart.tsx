@@ -18,7 +18,7 @@ interface HabitChartProps {
   days: number;
 }
 
-export default function HabitChart({ habitId, days }: HabitChartProps) {
+export default function HabitChart({ days }: HabitChartProps) {
   // Generate mock data for now - replace with real API call
   const data = useMemo(() => {
     const data = [];
@@ -39,6 +39,7 @@ export default function HabitChart({ habitId, days }: HabitChartProps) {
     return data;
   }, [days]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (

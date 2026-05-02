@@ -75,6 +75,11 @@ export const BooleanCard = memo(function BooleanCard({
 
   const router = useRouter();
 
+  // Prefetch the detail page to eliminate Next.js compilation delay on click
+  useEffect(() => {
+    router.prefetch(`/habits/${habit.id}`);
+  }, [router, habit.id]);
+
   useEffect(() => {
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);

@@ -32,8 +32,12 @@ export default function HistoryChart({ habitId }: HistoryChartProps) {
         const chartData = await chartsApi.getHistoryChart(habitId, period);
         setData(chartData);
         setError(null);
-      } catch (err: any) {
-        setError(err?.response?.data?.message || "Failed to load history data");
+      } catch (err) {
+        setError(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (err as any)?.response?.data?.message ||
+            "Failed to load history data",
+        );
       } finally {
         setLoading(false);
       }
@@ -42,6 +46,7 @@ export default function HistoryChart({ habitId }: HistoryChartProps) {
     fetchData();
   }, [habitId, period]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const date = new Date(payload[0].payload.date);

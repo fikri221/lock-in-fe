@@ -3,11 +3,7 @@
 import { useState, useMemo } from "react";
 import { format, subDays, startOfDay, getDay } from "date-fns";
 
-interface HabitHeatmapProps {
-  habitId: string;
-}
-
-export default function HabitHeatmap({ habitId }: HabitHeatmapProps) {
+export default function HabitHeatmap() {
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
   const [hoveredPosition, setHoveredPosition] = useState({ x: 0, y: 0 });
 
@@ -86,7 +82,7 @@ export default function HabitHeatmap({ habitId }: HabitHeatmapProps) {
                     <div
                       key={dateStr}
                       className={`w-3 h-3 rounded-sm ${getColor(
-                        value
+                        value,
                       )} hover:ring-2 hover:ring-blue-500 cursor-pointer transition-all`}
                       onMouseEnter={(e) => {
                         setHoveredDate(dateStr);

@@ -101,6 +101,11 @@ export const MeasurableCard = memo(function MeasurableCard({
     router.push(`/habits/${habit.id}`);
   };
 
+  // Prefetch the detail page to eliminate Next.js compilation delay on click
+  useEffect(() => {
+    router.prefetch(`/habits/${habit.id}`);
+  }, [router, habit.id]);
+
   useEffect(() => {
     onDragToggle?.(isDragMode);
   }, [isDragMode, onDragToggle]);

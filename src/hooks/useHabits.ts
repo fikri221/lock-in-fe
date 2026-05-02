@@ -1,26 +1,38 @@
-// src/hooks/useHabits.ts
-import { useState, useEffect, useCallback, startTransition } from "react";
+import { useEffect, useCallback, startTransition, useRef } from "react";
 import { habitsAPI } from "@/lib/api";
 import {
   CreateHabitRequest,
-  Habit,
   LogCompletion,
   LogCompletionType,
   UpdateHabitRequest,
 } from "@/types/habits";
 import { toast } from "sonner";
 import { isAxiosError } from "@/utils/errorHandlers";
+import { useHabitStore } from "@/store/habitStore";
 
 export const useHabits = (
   dateOrRange: string | { startDate: string; endDate: string },
 ) => {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const habits = useHabitStore((state) => state.habits);
+  const setHabits = useHabitStore((state) => state.setHabits);
+  const loading = useHabitStore((state) => state.loading);
+  const setLoading = useHabitStore((state) => state.setLoading);
+  const error = useHabitStore((state) => state.error);
+  const setError = useHabitStore((state) => state.setError);
+
+  // Reference to track if we've fetched initially to avoid excessive fetching
+  const hasFetchedRef = useRef(false);
 
   const fetchHabits = useCallback(async () => {
     try {
-      setLoading(true);
+      // Stale-while-revalidate (SWR) Pattern:
+      // Hanya tampilkan loading screen jika kita benar-benar belum punya data.
+      // Jika data sudah ada (dari navigasi sebelumnya), biarkan data lama tampil
+      // sementara kita mengambil data baru secara diam-diam di background.
+      const currentHabitsLength = useHabitStore.getState().habits.length;
+      if (currentHabitsLength === 0 && !hasFetchedRef.current) {
+        setLoading(true);
+      }
       const params =
         typeof dateOrRange === "string"
           ? { date: dateOrRange, active: true }
@@ -29,6 +41,7 @@ export const useHabits = (
       const response = await habitsAPI.getHabits(params);
       setHabits(response.data.habits);
       setError(null);
+      hasFetchedRef.current = true;
     } catch (err: unknown) {
       if (isAxiosError(err)) {
         setError(err.response?.data?.error || "Failed to fetch habits");
@@ -41,7 +54,7 @@ export const useHabits = (
     } finally {
       setLoading(false);
     }
-  }, [dateOrRange]);
+  }, [dateOrRange, setHabits, setLoading, setError]);
 
   const createHabit = async (data: CreateHabitRequest) => {
     // Optimistic update

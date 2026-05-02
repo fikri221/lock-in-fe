@@ -115,17 +115,24 @@ export default function HabitDetailPage() {
     (l: LogCompletion) => l.status === LogCompletionType.COMPLETED,
   );
 
-  if (loading || !habit) {
-    return (
-      <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-zinc-300 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
-            Loading details...
-          </p>
+  // Jika habit tidak ditemukan
+  if (!habit) {
+    // Jika masih proses loading dari server (First load / Hard refresh)
+    if (loading) {
+      return (
+        <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 items-center justify-center">
+          <div className="text-center">
+            <div className="w-10 h-10 border-4 border-zinc-300 dark:border-zinc-700 border-t-zinc-900 dark:border-t-zinc-100 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">
+              Loading details...
+            </p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    // Jika tidak loading tapi habit tetap tidak ada (Habit invalid / sudah dihapus)
+    // useEffect di atas akan melakukan redirect, kembalikan null untuk mencegah error render
+    return null;
   }
 
   return (
