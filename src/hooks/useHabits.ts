@@ -39,7 +39,13 @@ export const useHabits = (
           : { ...dateOrRange, active: true };
 
       const response = await habitsAPI.getHabits(params);
-      setHabits(response.data.habits);
+      
+      // Prevent unnecessary state updates if data hasn't changed
+      const currentHabits = useHabitStore.getState().habits;
+      if (JSON.stringify(response.data.habits) !== JSON.stringify(currentHabits)) {
+        setHabits(response.data.habits);
+      }
+      
       setError(null);
       hasFetchedRef.current = true;
     } catch (err: unknown) {

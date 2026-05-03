@@ -31,80 +31,101 @@ interface HabitItemProps {
   onDragToggle: (id: string, isDragging: boolean) => void;
 }
 
-const HabitItem = memo(function HabitItem({
-  habit,
-  log,
-  selectedDate,
-  onComplete,
-  onSkip,
-  onDelete,
-  onDragToggle,
-}: HabitItemProps) {
-  const handleComplete = useCallback(() => {
-    onComplete(habit.id, { logDate: selectedDate });
-  }, [habit.id, onComplete, selectedDate]);
+const HabitItem = memo(
+  function HabitItem({
+    habit,
+    log,
+    selectedDate,
+    onComplete,
+    onSkip,
+    onDelete,
+    onDragToggle,
+  }: HabitItemProps) {
+    const handleComplete = useCallback(() => {
+      onComplete(habit.id, { logDate: selectedDate });
+    }, [habit.id, onComplete, selectedDate]);
 
-  const handleSkip = useCallback(() => {
-    onSkip(habit.id, { logDate: selectedDate });
-  }, [habit.id, onSkip, selectedDate]);
+    const handleSkip = useCallback(() => {
+      onSkip(habit.id, { logDate: selectedDate });
+    }, [habit.id, onSkip, selectedDate]);
 
-  const handleSetValue = useCallback(
-    (data: { actualValue: number }) => {
-      onComplete(habit.id, { logDate: selectedDate, ...data });
-    },
-    [habit.id, onComplete, selectedDate],
-  );
+    const handleSetValue = useCallback(
+      (data: { actualValue: number }) => {
+        onComplete(habit.id, { logDate: selectedDate, ...data });
+      },
+      [habit.id, onComplete, selectedDate],
+    );
 
-  const handleDelete = useCallback(() => {
-    onDelete(habit.id);
-  }, [habit.id, onDelete]);
+    const handleDelete = useCallback(() => {
+      onDelete(habit.id);
+    }, [habit.id, onDelete]);
 
-  const handleToggle = useCallback(
-    (isDragging: boolean) => {
-      onDragToggle(habit.id, isDragging);
-    },
-    [habit.id, onDragToggle],
-  );
+    const handleToggle = useCallback(
+      (isDragging: boolean) => {
+        onDragToggle(habit.id, isDragging);
+      },
+      [habit.id, onDragToggle],
+    );
 
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{
-        opacity: 0,
-        scale: 0.8,
-        transition: { duration: 0.2 },
-      }}
-      transition={{
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-        opacity: { duration: 0.2 },
-      }}
-      className="relative"
-    >
-      {habit.habitType === "boolean" ? (
-        <BooleanCard
-          habit={habit}
-          log={log}
-          onComplete={handleComplete}
-          onSkip={handleSkip}
-          onDelete={handleDelete}
-          onDragToggle={handleToggle}
-        />
-      ) : (
-        <MeasurableCard
-          habit={habit}
-          log={log}
-          onSetValue={handleSetValue}
-          onDelete={handleDelete}
-          onDragToggle={handleToggle}
-        />
-      )}
-    </motion.div>
-  );
-});
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{
+          opacity: 0,
+          scale: 0.8,
+          transition: { duration: 0.2 },
+        }}
+        transition={{
+          type: "spring",
+          stiffness: 500,
+          damping: 30,
+          opacity: { duration: 0.2 },
+        }}
+        className="relative"
+      >
+        {habit.habitType === "boolean" ? (
+          <BooleanCard
+            habit={habit}
+            log={log}
+            onComplete={handleComplete}
+            onSkip={handleSkip}
+            onDelete={handleDelete}
+            onDragToggle={handleToggle}
+          />
+        ) : (
+          <MeasurableCard
+            habit={habit}
+            log={log}
+            onSetValue={handleSetValue}
+            onDelete={handleDelete}
+            onDragToggle={handleToggle}
+          />
+        )}
+      </motion.div>
+    );
+  },
+  (prev, next) => {
+    // Hanya render ulang jika tanggal berubah
+    if (prev.selectedDate.getTime() !== next.selectedDate.getTime())
+      return false;
+
+    // Cek perubahan log
+    if (prev.log?.status !== next.log?.status) return false;
+    if (prev.log?.actualValue !== next.log?.actualValue) return false;
+
+    // Cek perubahan habit
+    if (prev.habit.id !== next.habit.id) return false;
+    if (prev.habit.name !== next.habit.name) return false;
+    if (prev.habit.targetValue !== next.habit.targetValue) return false;
+    if (prev.habit.habitType !== next.habit.habitType) return false;
+    if (prev.habit.icon !== next.habit.icon) return false;
+    if (prev.habit.color !== next.habit.color) return false;
+
+    return true;
+  },
+);
 
 export default function Dashboard() {
   const router = useRouter();
@@ -145,20 +166,31 @@ export default function Dashboard() {
     });
   }, [habits, selectedDate]);
 
+  const selectedDateStr = useMemo(
+    () => selectedDate.toDateString(),
+    [selectedDate],
+  );
+
   const { completedToday, totalHabits } = useMemo(() => {
-    const doneCount = todaysHabits.filter((h) =>
-      (h.logs ?? []).some(
-        (l) =>
-          l.status === LogCompletionType.COMPLETED &&
+    const doneCount = todaysHabits.filter((h) => {
+      if (!h.logs || h.logs.length === 0) return false;
+      // Search backwards because recent logs are at the end
+      for (let i = h.logs.length - 1; i >= 0; i--) {
+        const l = h.logs[i];
+        if (
           new Date(l.logDate || l.createdAt || "").toDateString() ===
-            selectedDate.toDateString(),
-      ),
-    ).length;
+          selectedDateStr
+        ) {
+          return l.status === LogCompletionType.COMPLETED;
+        }
+      }
+      return false;
+    }).length;
     return {
       completedToday: doneCount,
       totalHabits: todaysHabits.length,
     };
-  }, [todaysHabits, selectedDate]);
+  }, [todaysHabits, selectedDateStr]);
 
   useEffect(() => {
     // Check authentication
@@ -300,11 +332,20 @@ export default function Dashboard() {
         <div className="flex flex-col gap-3 pb-4">
           <AnimatePresence mode="popLayout">
             {todaysHabits.map((habit) => {
-              const log = habit.logs?.find(
-                (l) =>
-                  new Date(l.logDate || l.createdAt || "").toDateString() ===
-                  selectedDate.toDateString(),
-              );
+              // Find log by searching backwards
+              let log = undefined;
+              if (habit.logs && habit.logs.length > 0) {
+                for (let i = habit.logs.length - 1; i >= 0; i--) {
+                  const l = habit.logs[i];
+                  if (
+                    new Date(l.logDate || l.createdAt || "").toDateString() ===
+                    selectedDateStr
+                  ) {
+                    log = l;
+                    break;
+                  }
+                }
+              }
 
               return (
                 <HabitItem

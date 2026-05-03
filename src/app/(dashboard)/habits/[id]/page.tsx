@@ -65,6 +65,19 @@ export default function HabitDetailPage() {
     editedTime,
   ]);
 
+  // Find today's log once to avoid instantiating multiple Date objects during render
+  const todayLog = useMemo(() => {
+    if (!habit?.logs || habit.logs.length === 0) return undefined;
+    const todayStr = new Date().toDateString();
+    for (let i = habit.logs.length - 1; i >= 0; i--) {
+      const l = habit.logs[i];
+      if (new Date(l.logDate || l.createdAt || "").toDateString() === todayStr) {
+        return l;
+      }
+    }
+    return undefined;
+  }, [habit?.logs]);
+
   const handleComplete = async () => {
     try {
       await completeHabit(habitId, {
@@ -230,12 +243,6 @@ export default function HabitDetailPage() {
                   strokeDasharray={402} /* 2 * PI * r = ~402 for r=64 */
                   strokeDashoffset={(() => {
                     const maxVal = habit.targetValue || 1;
-                    const todayLog = habit.logs?.find(
-                      (l: LogCompletion) =>
-                        new Date(
-                          l.logDate || l.createdAt || "",
-                        ).toDateString() === new Date().toDateString(),
-                    );
                     const actualValue = todayLog?.actualValue || 0;
                     const progressPercent = Math.min(
                       100,
@@ -250,16 +257,7 @@ export default function HabitDetailPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className="text-4xl mb-1">{habit.icon}</div>
                 <div className="text-xs font-bold text-zinc-500">
-                  {(() => {
-                    const todayLog = habit.logs?.find(
-                      (l) =>
-                        new Date(
-                          l.logDate || l.createdAt || "",
-                        ).toDateString() === new Date().toDateString(),
-                    );
-                    return todayLog?.actualValue || 0;
-                  })()}{" "}
-                  / {habit.targetValue || 0}
+                  {todayLog?.actualValue || 0} / {habit.targetValue || 0}
                 </div>
               </div>
             </div>
@@ -378,12 +376,6 @@ export default function HabitDetailPage() {
               <div className="flex items-center justify-center gap-6">
                 <button
                   onClick={async () => {
-                    const todayLog = habit.logs?.find(
-                      (l: LogCompletion) =>
-                        new Date(
-                          l.logDate || l.createdAt || "",
-                        ).toDateString() === new Date().toDateString(),
-                    );
                     const currentVal = todayLog?.actualValue || 0;
                     const newVal = Math.max(0, currentVal - 1);
                     if (newVal !== currentVal) {
@@ -412,12 +404,6 @@ export default function HabitDetailPage() {
                 </div>
                 <button
                   onClick={async () => {
-                    const todayLog = habit.logs?.find(
-                      (l: LogCompletion) =>
-                        new Date(
-                          l.logDate || l.createdAt || "",
-                        ).toDateString() === new Date().toDateString(),
-                    );
                     const currentVal = todayLog?.actualValue || 0;
                     const newVal = Math.max(0, currentVal + 1);
                     try {
