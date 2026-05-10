@@ -115,6 +115,9 @@ export const authAPI = {
   login: (data: { email: string; password: string }) =>
     api.post("/auth/login", data),
 
+  googleLogin: (credential: string) =>
+    api.post("/auth/google", { credential }),
+
   register: (data: { name: string; email: string; password: string }) =>
     api.post("/auth/register", data),
 

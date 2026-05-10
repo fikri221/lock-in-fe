@@ -8,10 +8,16 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Check, LockKeyholeOpenIcon } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
+import { GoogleCredentialResponse, GoogleLogin } from "@react-oauth/google";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const {
+    register,
+    loginWithGoogle,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useAuthStore();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -89,6 +95,34 @@ export default function RegisterPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (
+    credentialResponse: GoogleCredentialResponse,
+  ) => {
+    if (credentialResponse.credential) {
+      setLoading(true);
+      try {
+        await loginWithGoogle(credentialResponse.credential);
+        toast.success("Account created successfully! 🎉");
+        router.push("/");
+      } catch (error: unknown) {
+        if (isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.error ||
+              "Registration failed. Please try again.",
+          );
+        } else if (error instanceof Error) {
+          toast.error(
+            error.message || "Registration failed. Please try again.",
+          );
+        } else {
+          toast.error("Registration failed. Please try again.");
+        }
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -288,6 +322,33 @@ export default function RegisterPage() {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-zinc-50 dark:bg-zinc-950 px-2 text-zinc-500">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        {/* Google Login */}
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              toast.error("Google Sign Up failed");
+            }}
+            useOneTap
+            shape="rectangular"
+            theme="outline"
+            text="signup_with"
+            size="large"
+          />
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">

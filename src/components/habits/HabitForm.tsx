@@ -1,7 +1,7 @@
 import { CreateHabitRequest, HabitFrequency } from "@/types/habits";
 import { X, Sparkles } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 interface HabitFormProps {
@@ -90,6 +90,14 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -136,17 +144,17 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-sm"
     >
       <motion.div
         initial={{ opacity: 0, y: "100vh" }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: "100vh" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col"
+        className="w-full max-w-md max-h-[85vh] sm:max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500" />
             New Habit
@@ -159,10 +167,10 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Quick Suggestions Carousel */}
           {showSuggestions && (
-            <div className="overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+            <div className="overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
               <div className="flex gap-2 w-max">
                 {POPULAR_HABITS.map((habit, i) => (
                   <button
@@ -235,7 +243,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Type
@@ -273,7 +281,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 Goal Target
               </label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1">
                   <input
                     type="number"

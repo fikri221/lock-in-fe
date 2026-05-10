@@ -7,10 +7,16 @@ import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, LockKeyholeIcon } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
+import { GoogleCredentialResponse, GoogleLogin } from "@react-oauth/google";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const {
+    login,
+    loginWithGoogle,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -38,7 +44,6 @@ export default function LoginPage() {
 
     try {
       await login(formData.email, formData.password);
-      toast.success("Welcome back! 🎉");
       router.push("/");
     } catch (error: unknown) {
       if (isAxiosError(error)) {
@@ -58,6 +63,33 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleSuccess = async (
+    credentialResponse: GoogleCredentialResponse,
+  ) => {
+    if (credentialResponse.credential) {
+      setLoading(true);
+      try {
+        await loginWithGoogle(credentialResponse.credential);
+        router.push("/");
+      } catch (error: unknown) {
+        if (isAxiosError(error)) {
+          toast.error(
+            error.response?.data?.error ||
+              "Login failed. Please check your credentials.",
+          );
+        } else if (error instanceof Error) {
+          toast.error(
+            "Login failed. Invalid email or password. Please try again.",
+          );
+        } else {
+          toast.error("Login failed. Please try again later.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 transition-colors">
       <div className="w-full max-w-sm">
@@ -67,7 +99,7 @@ export default function LoginPage() {
             <LockKeyholeIcon className="w-6 h-6 text-white dark:text-zinc-900" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-            Welcome back
+            Time to Lock In!
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">
             Enter your credentials to access your account
@@ -158,6 +190,33 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-zinc-50 dark:bg-zinc-950 px-2 text-zinc-500">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        {/* Google Login */}
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => {
+              toast.error("Google Login failed");
+            }}
+            useOneTap
+            shape="rectangular"
+            theme="outline"
+            text="signin_with"
+            size="large"
+          />
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center space-y-4">

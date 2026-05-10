@@ -366,27 +366,37 @@ export default function Dashboard() {
         {habits.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-4xl">🌱</p>
-            <p className="mt-3 text-sm text-zinc-500">Loading habits...</p>
+            <p className="mt-3 text-sm text-zinc-500">
+              No habits for today. Create one to get started.
+            </p>
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="mt-3 inline-flex items-center rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              + Add Habit
+            </button>
           </div>
         )}
 
         {/* Instructions hint */}
-        <div className="mt-2 mb-20 rounded-xl bg-zinc-100 px-3 py-3 text-center dark:bg-zinc-900 sm:px-4">
-          <p className="text-[11px] sm:text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Swipe right
-            </span>{" "}
-            to complete &middot;{" "}
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Long press
-            </span>{" "}
-            to drag & delete &middot;{" "}
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
-              Tap
-            </span>{" "}
-            for +/- buttons
-          </p>
-        </div>
+        {habits.length > 0 && (
+          <div className="mt-2 mb-20 rounded-xl bg-zinc-100 px-3 py-3 text-center dark:bg-zinc-900 sm:px-4">
+            <p className="text-[11px] sm:text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                Swipe right
+              </span>{" "}
+              to complete &middot;{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                Long press
+              </span>{" "}
+              to drag & delete &middot;{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                Tap
+              </span>{" "}
+              for +/- buttons
+            </p>
+          </div>
+        )}
 
         {/* Trash Bin Drop Zone */}
         <AnimatePresence>
