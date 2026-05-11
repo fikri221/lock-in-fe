@@ -9,6 +9,14 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Check, LockKeyholeOpenIcon } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
 import { GoogleCredentialResponse, GoogleLogin } from "@react-oauth/google";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -280,30 +288,122 @@ export default function RegisterPage() {
           </div>
 
           {/* Terms */}
-          <div className="pt-2">
-            <label className="flex items-start gap-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                required
-                className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 bg-transparent"
-              />
-              <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+          <div className="pt-2 flex items-start gap-2 group">
+            <input
+              type="checkbox"
+              id="terms-checkbox"
+              required
+              className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 bg-transparent cursor-pointer shrink-0"
+            />
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
+              <label htmlFor="terms-checkbox" className="cursor-pointer">
                 I agree to the{" "}
-                <button
-                  type="button"
-                  className="text-zinc-900 dark:text-zinc-100 hover:underline font-medium"
-                >
-                  Terms
-                </button>{" "}
-                and{" "}
-                <button
-                  type="button"
-                  className="text-zinc-900 dark:text-zinc-100 hover:underline font-medium"
-                >
-                  Privacy Policy
-                </button>
-              </span>
-            </label>
+              </label>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-zinc-900 dark:text-zinc-100 hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Terms of Service</DialogTitle>
+                    <DialogDescription>
+                      Please read these terms carefully before using our
+                      application.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-4 mt-4">
+                    <p>
+                      <strong>1. Acceptance of Terms</strong>
+                      <br />
+                      By accessing or using our service, you agree to be bound
+                      by these Terms of Service.
+                    </p>
+                    <p>
+                      <strong>2. Use of Service</strong>
+                      <br />
+                      You agree to use the service only for lawful purposes and
+                      in a way that does not infringe the rights of others.
+                    </p>
+                    <p>
+                      <strong>3. Privacy</strong>
+                      <br />
+                      Your use of the service is also governed by our Privacy
+                      Policy. Please review it to understand our practices.
+                    </p>
+                    <p>
+                      <strong>4. Account Security</strong>
+                      <br />
+                      You are responsible for safeguarding your account password
+                      and any activities or actions under your account.
+                    </p>
+                    <p>
+                      <strong>5. Modifications</strong>
+                      <br />
+                      We reserve the right to modify or replace these terms at
+                      any time. Changes will be effective upon posting.
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>{" "}
+              and{" "}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    className="text-zinc-900 dark:text-zinc-100 hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Privacy Policy</DialogTitle>
+                    <DialogDescription>
+                      How we collect, use, and protect your data.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="text-sm text-zinc-600 dark:text-zinc-300 space-y-4 mt-4">
+                    <p>
+                      <strong>1. Information Collection</strong>
+                      <br />
+                      We collect information you provide directly to us, such as
+                      your name, email address, and habit tracking data.
+                    </p>
+                    <p>
+                      <strong>2. Use of Information</strong>
+                      <br />
+                      We use the information to provide, maintain, and improve
+                      our services, as well as to communicate with you.
+                    </p>
+                    <p>
+                      <strong>3. Information Sharing</strong>
+                      <br />
+                      We do not share your personal information with third
+                      parties except as necessary to provide our services or
+                      comply with the law.
+                    </p>
+                    <p>
+                      <strong>4. Data Security</strong>
+                      <br />
+                      We implement appropriate security measures to protect your
+                      personal information from unauthorized access.
+                    </p>
+                    <p>
+                      <strong>5. Your Rights</strong>
+                      <br />
+                      You have the right to access, update, or delete your
+                      personal information at any time through your account
+                      settings.
+                    </p>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </span>
           </div>
 
           {/* Submit Button */}
@@ -336,18 +436,21 @@ export default function RegisterPage() {
         </div>
 
         {/* Google Login */}
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => {
-              toast.error("Google Sign Up failed");
-            }}
-            useOneTap
-            shape="rectangular"
-            theme="outline"
-            text="signup_with"
-            size="large"
-          />
+        <div className="w-full flex justify-center">
+          <div className="w-full rounded-xl overflow-hidden flex justify-center border border-zinc-200 dark:border-zinc-800 shadow-sm [&>div]:w-full [&_iframe]:w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                toast.error("Google Sign Up failed");
+              }}
+              useOneTap
+              shape="rectangular"
+              theme="outline"
+              text="signup_with"
+              size="large"
+              width="400"
+            />
+          </div>
         </div>
 
         {/* Footer */}

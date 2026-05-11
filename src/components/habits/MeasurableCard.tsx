@@ -427,10 +427,10 @@ export const MeasurableCard = memo(function MeasurableCard({
 
   const isDone = dragDisplayVal > 0;
   const isMax = dragDisplayVal >= maxValue;
-  const segmentCount = Math.max(
-    0,
-    Math.min(10, Math.floor((dragDisplayVal / (maxValue || 1)) * 8) || 0),
-  );
+  // const segmentCount = Math.max(
+  //   0,
+  //   Math.min(10, Math.floor((dragDisplayVal / (maxValue || 1)) * 8) || 0),
+  // );
 
   return (
     <div className="relative">
@@ -467,7 +467,7 @@ export const MeasurableCard = memo(function MeasurableCard({
         }`}
       >
         <div
-          className="absolute bottom-0 left-0 right-0 h-[3px] pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-[3px] pointer-events-none z-0"
           style={{
             background: isDone
               ? "linear-gradient(to right, rgba(120,80,40,0.3), rgba(80,60,30,0.15))"
@@ -475,12 +475,20 @@ export const MeasurableCard = memo(function MeasurableCard({
           }}
         />
         <motion.div
-          className="absolute bottom-0 left-0 top-0 pointer-events-none"
+          className="absolute bottom-0 left-0 top-0 pointer-events-none z-0"
           style={{
             width: fillWidthStr,
             background: vineBg,
           }}
         />
+
+        {/* Absolute Progress Bar at the bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-zinc-100/50 dark:bg-zinc-800/50 overflow-hidden z-0 pointer-events-none">
+          <motion.div
+            className="absolute top-0 bottom-0 left-0 origin-left"
+            style={{ width: fillWidthStr, backgroundColor: stemColor }}
+          />
+        </div>
         <div className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4">
           <span className="text-2xl sm:text-3xl shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all">
             {habit.icon}
@@ -496,7 +504,7 @@ export const MeasurableCard = memo(function MeasurableCard({
               </p>
               <div className="flex items-baseline gap-1">
                 <motion.span
-                  className={`text-lg font-bold font-mono transition-colors duration-300 ${
+                  className={`text-base font-semibold font-mono transition-colors duration-300 ${
                     isDone
                       ? "text-emerald-600 dark:text-emerald-400"
                       : "text-zinc-600 dark:text-zinc-400"
@@ -504,39 +512,12 @@ export const MeasurableCard = memo(function MeasurableCard({
                 >
                   {roundedValue}
                 </motion.span>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                <span className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500">
                   / {maxValue} {habit.targetUnit || ""}
                 </span>
               </div>
             </div>
-            <div className="mt-2 h-1.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden relative">
-              {[...Array(9)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute top-0 bottom-0 w-[1px] bg-zinc-300/30 dark:bg-zinc-700/30"
-                  style={{ left: `${(i + 1) * 10}%` }}
-                />
-              ))}
-              <motion.div
-                className="absolute top-1/2 left-0 h-[2px] -translate-y-1/2 rounded-full origin-left"
-                style={{ width: fillWidthStr, backgroundColor: stemColor }}
-              />
-              <div className="absolute inset-0 pointer-events-none overflow-visible">
-                {[...Array(segmentCount)].map((_, i) => (
-                  <motion.div
-                    key={`static-${i}`}
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{
-                      left: `${(i + 1) * 12.5}%`,
-                      transform: `translateY(${i % 2 === 0 ? "-3px" : "3px"}) rotate(${
-                        i % 2 === 0 ? "-20deg" : "20deg"
-                      }) scale(0.6)`,
-                    }}
-                  ></motion.div>
-                ))}
-              </div>
-            </div>
-            <p className="mt-2 text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 flex justify-between">
+            <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 flex justify-between mt-0.5">
               <span>
                 {isDragMode
                   ? "Drag to trash to delete"
