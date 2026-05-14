@@ -253,7 +253,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, habitType: e.target.value })
                 }
-                className="w-full h-10 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 text-sm focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none"
+                className="w-full h-10 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none"
               >
                 <option value="boolean">Yes/No Completion</option>
                 <option value="measurable">Measurable (e.g. 5km)</option>
@@ -268,7 +268,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, frequency: e.target.value })
                 }
-                className="w-full h-10 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 text-sm focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none"
+                className="w-full h-10 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 text-sm text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none"
               >
                 <option value={HabitFrequency.DAILY}>Daily</option>
                 <option value={HabitFrequency.WEEKLY}>Weekly</option>
@@ -286,14 +286,16 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                   <input
                     type="number"
                     placeholder="Value"
-                    value={formData.targetValue}
+                    value={formData.targetValue || ""}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        targetValue: Number(e.target.value),
+                        targetValue: e.target.value
+                          ? Number(e.target.value)
+                          : 0,
                       })
                     }
-                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 focus:ring-2 focus:ring-zinc-900 outline-none"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
                 <div className="flex-1">
@@ -307,7 +309,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                         targetUnit: e.target.value,
                       })
                     }
-                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 focus:ring-2 focus:ring-zinc-900 outline-none"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
               </div>
@@ -346,14 +348,16 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                     type="number"
                     min={1}
                     max={7}
-                    value={formData.targetCount || 1}
+                    value={formData.targetCount || ""}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        targetCount: Number(e.target.value),
+                        targetCount: e.target.value
+                          ? Number(e.target.value)
+                          : 0,
                       })
                     }
-                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3"
+                    className="w-full h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none text-zinc-900 dark:text-zinc-100"
                   />
                 </div>
               ) : (

@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useState, memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LogOut } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useHabits } from "@/hooks/useHabits";
 import { AnimatePresence, motion } from "framer-motion";
 import HabitForm from "@/components/habits/HabitForm";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
+import SettingsModal from "@/components/dashboard/SettingsModal";
 import HorizontalCalendar from "@/components/dashboard/HorizontalCalendar";
 import {
   LogCompletionType,
@@ -131,7 +132,24 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("dashboardDate");
+      if (stored) {
+        const date = new Date(stored);
+        if (!isNaN(date.getTime())) return date;
+      }
+    }
+    return new Date();
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("dashboardDate", selectedDate.toISOString());
+    }
+  }, [selectedDate]);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   /* ─── Drag to Delete State ─── */
@@ -288,11 +306,11 @@ export default function Dashboard() {
               {selectedDate.toDateString()}
             </p>
             <button
-              onClick={handleLogout}
+              onClick={() => setIsSettingsOpen(true)}
               className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
-              title="Logout"
+              title="Settings"
             >
-              <LogOut className="w-4 h-4" />
+              <Settings className="w-4 h-4" />
             </button>
           </div>
           <div className="flex items-baseline justify-between">
@@ -391,9 +409,9 @@ export default function Dashboard() {
               </span>{" "}
               to drag & delete &middot;{" "}
               <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                Tap
+                Drag card
               </span>{" "}
-              for +/- buttons
+              to set value
             </p>
           </div>
         )}
@@ -482,6 +500,16 @@ export default function Dashboard() {
           <HabitForm
             onClose={() => setIsFormOpen(false)}
             onSubmit={handleAddHabit}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <SettingsModal
+            onClose={() => setIsSettingsOpen(false)}
+            onLogout={handleLogout}
           />
         )}
       </AnimatePresence>
