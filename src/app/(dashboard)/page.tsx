@@ -18,11 +18,13 @@ import {
 } from "@/types/habits";
 import { BooleanCard } from "@/components/habits/BooleanCard";
 import { MeasurableCard } from "@/components/habits/MeasurableCard";
+import { TapViewCard } from "@/components/habits/TapViewCard";
 
 interface HabitItemProps {
   habit: Habit;
   log?: LogCompletion;
   selectedDate: Date;
+  interactionMode: "swipe" | "tap";
   onComplete: (
     id: string,
     data?: { actualValue?: number; logDate?: Date },
@@ -37,6 +39,7 @@ const HabitItem = memo(
     habit,
     log,
     selectedDate,
+    interactionMode,
     onComplete,
     onSkip,
     onDelete,
@@ -90,6 +93,7 @@ const HabitItem = memo(
           <BooleanCard
             habit={habit}
             log={log}
+            interactionMode={interactionMode}
             onComplete={handleComplete}
             onSkip={handleSkip}
             onDelete={handleDelete}
@@ -99,6 +103,7 @@ const HabitItem = memo(
           <MeasurableCard
             habit={habit}
             log={log}
+            interactionMode={interactionMode}
             onSetValue={handleSetValue}
             onDelete={handleDelete}
             onDragToggle={handleToggle}
@@ -111,6 +116,9 @@ const HabitItem = memo(
     // Hanya render ulang jika tanggal berubah
     if (prev.selectedDate.getTime() !== next.selectedDate.getTime())
       return false;
+
+    // Cek perubahan mode interaksi
+    if (prev.interactionMode !== next.interactionMode) return false;
 
     // Cek perubahan log
     if (prev.log?.status !== next.log?.status) return false;
@@ -131,6 +139,9 @@ const HabitItem = memo(
 export default function Dashboard() {
   const router = useRouter();
 
+  const [interactionMode, setInteractionMode] = useState<"swipe" | "tap">(
+    "swipe",
+  );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -347,6 +358,39 @@ export default function Dashboard() {
             onSelectDate={setSelectedDate}
           />
         </div>
+
+        {/* 5-Day Header for Tap Mode */}
+        {interactionMode === "tap" && habits.length > 0 && (
+          <div className="flex justify-end px-3 sm:px-4 mb-2">
+            <div className="flex items-center gap-1.5 shrink-0">
+              {[4, 3, 2, 1, 0].map((offset) => {
+                const d = new Date(selectedDate);
+                d.setDate(d.getDate() - offset);
+                const dayName = d
+                  .toLocaleDateString("en-US", { weekday: "short" })
+                  .substring(0, 2);
+                const dateNum = d.getDate();
+                const isToday = d.toDateString() === new Date().toDateString();
+
+                return (
+                  <div
+                    key={offset}
+                    className={`flex flex-col items-center justify-center w-7 sm:w-8 ${
+                      isToday
+                        ? "text-emerald-500"
+                        : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase">
+                      {dayName}
+                    </span>
+                    <span className="text-xs font-bold">{dateNum}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-3 pb-4">
           <AnimatePresence mode="popLayout">
             {todaysHabits.map((habit) => {
@@ -365,12 +409,29 @@ export default function Dashboard() {
                 }
               }
 
-              return (
+              return interactionMode === "tap" ? (
+                <motion.div
+                  key={habit.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                >
+                  <TapViewCard
+                    habit={habit}
+                    selectedDate={selectedDate}
+                    onComplete={handleCompleteHabit}
+                    onSkip={handleSkipHabit}
+                  />
+                </motion.div>
+              ) : (
                 <HabitItem
                   key={habit.id}
                   habit={habit}
                   log={log}
                   selectedDate={selectedDate}
+                  interactionMode={interactionMode}
                   onComplete={handleCompleteHabit}
                   onSkip={handleSkipHabit}
                   onDelete={handleDeleteHabit}
@@ -398,23 +459,59 @@ export default function Dashboard() {
 
         {/* Instructions hint */}
         {habits.length > 0 && (
-          <div className="mt-2 mb-20 rounded-xl bg-zinc-100 px-3 py-3 text-center dark:bg-zinc-900 sm:px-4">
+          <div className="mt-2 mb-24 rounded-xl bg-zinc-100 px-3 py-3 text-center dark:bg-zinc-900 sm:px-4">
             <p className="text-[11px] sm:text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                Swipe right
-              </span>{" "}
-              to complete &middot;{" "}
+              {interactionMode === "swipe" ? (
+                <>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    Swipe right
+                  </span>{" "}
+                  to complete &middot;{" "}
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    Drag card
+                  </span>{" "}
+                  to set value
+                </>
+              ) : (
+                <>
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    Tap card
+                  </span>{" "}
+                  to complete or add 1
+                </>
+              )}{" "}
+              &middot;{" "}
               <span className="font-medium text-zinc-700 dark:text-zinc-300">
                 Long press
               </span>{" "}
-              to drag & delete &middot;{" "}
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                Drag card
-              </span>{" "}
-              to set value
+              to drag & delete
             </p>
           </div>
         )}
+
+        {/* Interaction Mode Toggle */}
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900/90 dark:bg-zinc-100/90 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-lg border border-white/10 dark:border-black/10">
+          <button
+            onClick={() => setInteractionMode("swipe")}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              interactionMode === "swipe"
+                ? "bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 shadow-sm"
+                : "text-zinc-400 hover:text-white dark:text-zinc-500 dark:hover:text-zinc-900"
+            }`}
+          >
+            Swipe
+          </button>
+          <button
+            onClick={() => setInteractionMode("tap")}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              interactionMode === "tap"
+                ? "bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100 shadow-sm"
+                : "text-zinc-400 hover:text-white dark:text-zinc-500 dark:hover:text-zinc-900"
+            }`}
+          >
+            Tap
+          </button>
+        </div>
 
         {/* Trash Bin Drop Zone */}
         <AnimatePresence>

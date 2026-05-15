@@ -49,6 +49,7 @@ function FlowerSVG() {
 interface MeasurableCardProps {
   habit: Habit;
   log?: LogCompletion;
+  interactionMode?: "swipe" | "tap";
   onSetValue: (data: { actualValue: number }) => void;
   onDelete?: () => void;
   onDragToggle?: (isDragging: boolean) => void;
@@ -57,6 +58,7 @@ interface MeasurableCardProps {
 export const MeasurableCard = memo(function MeasurableCard({
   habit,
   log,
+  interactionMode = "swipe",
   onSetValue,
   onDelete,
   onDragToggle,
@@ -244,6 +246,7 @@ export const MeasurableCard = memo(function MeasurableCard({
       }, 500);
 
       if (expanded) return;
+      if (interactionMode === "tap") return;
 
       startXRef.current = e.clientX;
       startYRef.current = e.clientY;
@@ -257,7 +260,7 @@ export const MeasurableCard = memo(function MeasurableCard({
       setDragging(true);
       draggingRef.current = true;
     },
-    [expanded, currentValue, scale, rotate, dragControls],
+    [expanded, currentValue, scale, rotate, dragControls, interactionMode],
   );
 
   const handlePointerMove = useCallback(
@@ -398,10 +401,11 @@ export const MeasurableCard = memo(function MeasurableCard({
   function handleTap() {
     if (isDragMode) return;
 
-    // WORK ON IT LATER
-    // if (!hasDraggedRef.current) {
-    setExpanded(false);
-    // }
+    if (interactionMode === "tap") {
+      adjustValue(1);
+    } else {
+      setExpanded(false);
+    }
   }
 
   function adjustValue(delta: number) {
@@ -451,6 +455,7 @@ export const MeasurableCard = memo(function MeasurableCard({
         onPointerLeave={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onPointerMove={handlePointerMove}
+        whileTap={!isDragMode && interactionMode === "tap" ? { scale: 1.02 } : undefined}
         onClick={handleTap}
         className={`relative overflow-hidden rounded-2xl border shadow-sm select-none transition-colors duration-500 ${
           isDragMode ? "touch-none" : "touch-pan-y"
@@ -494,45 +499,53 @@ export const MeasurableCard = memo(function MeasurableCard({
             {habit.icon}
           </span>
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-center mr-1">
-              <p
-                onClick={handleHeaderClick}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate cursor-pointer hover:underline"
-              >
-                {habit.name}
-              </p>
-              <div className="flex items-baseline gap-1">
-                <motion.span
-                  className={`text-base font-semibold font-mono transition-colors duration-300 ${
-                    isDone
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-zinc-600 dark:text-zinc-400"
-                  }`}
-                >
-                  {roundedValue}
-                </motion.span>
-                <span className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500">
-                  / {maxValue} {habit.targetUnit || ""}
-                </span>
-              </div>
-            </div>
-            <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 flex justify-between mt-0.5">
-              <span>
+            <p
+              onClick={handleHeaderClick}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate cursor-pointer hover:underline"
+            >
+              {habit.name}
+            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
                 {isDragMode
                   ? "Drag to trash to delete"
-                  : "Drag card to set value"}
-              </span>
+                  : interactionMode === "tap"
+                    ? "Tap card to add 1"
+                    : "Drag card to set value"}
+              </p>
               {showFlower && (
                 <motion.span
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="text-amber-500 font-medium"
+                  className="text-[11px] sm:text-xs text-amber-500 font-medium whitespace-nowrap"
                 >
                   Max reached! 🌻
                 </motion.span>
               )}
-            </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end shrink-0 ml-2">
+            <div className="flex items-baseline gap-0.5">
+              <motion.span
+                className={`text-base sm:text-lg font-bold font-mono transition-colors duration-300 ${
+                  isDone
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-zinc-600 dark:text-zinc-400"
+                }`}
+              >
+                {roundedValue}
+              </motion.span>
+              <span className="text-[11px] sm:text-xs text-zinc-400 dark:text-zinc-500 font-medium">
+                / {maxValue}
+              </span>
+            </div>
+            {habit.targetUnit && (
+              <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 leading-none mt-0.5 uppercase tracking-wider font-bold">
+                {habit.targetUnit}
+              </span>
+            )}
           </div>
         </div>
         {showFlower && !dragging && (

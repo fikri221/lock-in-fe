@@ -16,6 +16,7 @@ type CardPhase = "idle" | "flying-out" | "dropping-in";
 interface BooleanCardProps {
   habit: Habit;
   log?: LogCompletion;
+  interactionMode?: "swipe" | "tap";
   onComplete: () => void;
   onSkip: () => void;
   onDelete?: () => void;
@@ -25,6 +26,7 @@ interface BooleanCardProps {
 export const BooleanCard = memo(function BooleanCard({
   habit,
   log,
+  interactionMode = "swipe",
   onComplete,
   onSkip,
   onDelete,
@@ -314,11 +316,25 @@ export const BooleanCard = memo(function BooleanCard({
   };
 
   const isDone = log?.status === LogCompletionType.COMPLETED || localDone;
-  const isDraggable = phase === "idle";
+  const isDraggable = phase === "idle" && interactionMode === "swipe";
 
   const handleCardClick = () => {
     if (!swiping && !isDragMode) {
-      router.push(`/habits/${habit.id}`);
+      if (interactionMode === "tap") {
+        if (!isDone) {
+          animate(scale, [1, 0.95, 1], { duration: 0.2 });
+          setLocalDone(true);
+          startTransition(() => {
+            onComplete();
+          });
+          setTimeout(() => setLocalDone(false), 800);
+        } else {
+          // You could optionally do something else if already done, e.g. details
+          router.push(`/habits/${habit.id}`);
+        }
+      } else {
+        router.push(`/habits/${habit.id}`);
+      }
     }
   };
 
@@ -362,7 +378,7 @@ export const BooleanCard = memo(function BooleanCard({
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        whileTap={isDraggable && !isDragMode ? { scale: 1.02 } : undefined}
+        whileTap={(!isDragMode && (interactionMode === "tap" || isDraggable)) ? { scale: 1.02 } : undefined}
         onClick={handleCardClick}
         className={`relative z-10 flex overflow-hidden cursor-pointer select-none items-center gap-3 sm:gap-4 rounded-2xl border px-4 sm:px-5 py-4 shadow-sm transition-shadow active:cursor-grabbing active:shadow-md ${isDragMode ? "touch-none" : "touch-pan-y"} ${
           isDone
