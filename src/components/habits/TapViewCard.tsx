@@ -1,8 +1,8 @@
 "use client";
 
 import { Habit, LogCompletionType } from "@/types/habits";
-import { motion } from "framer-motion";
-import React, { memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import React, { memo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface TapViewCardProps {
@@ -25,11 +25,15 @@ export const TapViewCard = memo(function TapViewCard({
 
   // Calculate the last 5 days ending on selectedDate
   const days = [];
-  for (let i = 4; i >= 0; i--) {
+  for (let i = 3; i >= 0; i--) {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - i);
     days.push(d);
   }
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalDate, setModalDate] = useState<Date | null>(null);
+  const [inputValue, setInputValue] = useState("");
 
   const handleBoxTap = (date: Date, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -47,12 +51,21 @@ export const TapViewCard = memo(function TapViewCard({
         onComplete(habit.id, { logDate: date });
       }
     } else {
-      const currentVal = Number(log?.actualValue ?? 0);
-      const maxValue = Number(habit.targetValue ?? 100);
-      const step = 1;
-      const newVal = currentVal + step;
-      onComplete(habit.id, { actualValue: newVal, logDate: date });
+      setModalDate(date);
+      setInputValue((log?.actualValue ?? 0).toString());
+      setModalOpen(true);
     }
+  };
+
+  const handleSaveValue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalDate) return;
+
+    const newVal = Number(inputValue);
+    if (!isNaN(newVal)) {
+      onComplete(habit.id, { actualValue: newVal, logDate: modalDate });
+    }
+    setModalOpen(false);
   };
 
   return (
@@ -145,6 +158,76 @@ export const TapViewCard = memo(function TapViewCard({
           }
         })}
       </div>
+
+      <AnimatePresence>
+        {modalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setModalOpen(false);
+              }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+            >
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">
+                Log {habit.name}
+              </h3>
+              <p className="text-sm text-zinc-500 mb-4">
+                Enter value for{" "}
+                {modalDate?.toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
+
+              <form onSubmit={handleSaveValue}>
+                <div className="flex items-center gap-3 mb-6">
+                  <input
+                    type="number"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-lg font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    placeholder="0"
+                    autoFocus
+                  />
+                  {habit.targetUnit && (
+                    <span className="text-zinc-500 font-medium">
+                      {habit.targetUnit}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(false)}
+                    className="flex-1 rounded-xl bg-zinc-100 py-3 font-semibold text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 rounded-xl bg-emerald-500 py-3 font-semibold text-white hover:bg-emerald-600 shadow-sm shadow-emerald-500/20 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 });

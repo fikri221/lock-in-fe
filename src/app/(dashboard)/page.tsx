@@ -140,8 +140,23 @@ export default function Dashboard() {
   const router = useRouter();
 
   const [interactionMode, setInteractionMode] = useState<"swipe" | "tap">(
-    "swipe",
+    () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("interactionMode");
+        if (stored === "swipe" || stored === "tap") {
+          return stored;
+        }
+      }
+      return "swipe";
+    },
   );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("interactionMode", interactionMode);
+    }
+  }, [interactionMode]);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -321,7 +336,7 @@ export default function Dashboard() {
               className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
               title="Settings"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-5 h-5" />
             </button>
           </div>
           <div className="flex items-baseline justify-between">
@@ -331,20 +346,6 @@ export default function Dashboard() {
             <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
               {completedToday}/{totalHabits} done
             </span>
-          </div>
-          {/* Progress bar */}
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-            <motion.div
-              className="h-full rounded-full bg-emerald-500"
-              initial={{ width: 0 }}
-              animate={{
-                width:
-                  habits.length > 0
-                    ? `${(completedToday / habits.length) * 100}%`
-                    : "0%",
-              }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
           </div>
         </div>
       </header>
@@ -363,7 +364,7 @@ export default function Dashboard() {
         {interactionMode === "tap" && habits.length > 0 && (
           <div className="flex justify-end px-3 sm:px-4 mb-2">
             <div className="flex items-center gap-1.5 shrink-0">
-              {[4, 3, 2, 1, 0].map((offset) => {
+              {[3, 2, 1, 0].map((offset) => {
                 const d = new Date(selectedDate);
                 d.setDate(d.getDate() - offset);
                 const dayName = d
