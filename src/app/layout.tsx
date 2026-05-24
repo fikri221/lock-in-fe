@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import AuthProvider from "@/providers/AuthProvider";
 import { Toaster } from "sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import ServiceWorkerRegistrar from "@/components/providers/ServiceWorkerRegistrar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
           >
             <AuthProvider>{children}</AuthProvider>
             <Toaster position="top-center" richColors />
+            <ServiceWorkerRegistrar />
           </ThemeProvider>
         </GoogleOAuthProvider>
       </body>

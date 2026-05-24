@@ -152,4 +152,25 @@ export const habitsAPI = {
     api.get(`/habits/${id}/stats`, { params: { days } }),
 };
 
+export const notificationAPI = {
+  subscribe: (subscription: {
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent: string;
+  }) => api.post("/notifications/subscribe", subscription),
+
+  unsubscribe: (endpoint: string) =>
+    api.post("/notifications/unsubscribe", { endpoint }),
+
+  getPreferences: () => api.get("/notifications/preferences"),
+
+  updatePreferences: (data: {
+    notificationEnabled?: boolean;
+    reminderTime?: string;
+  }) => api.put("/notifications/preferences", data),
+
+  sendTest: () => api.post("/notifications/test"),
+};
+
 export default api;
