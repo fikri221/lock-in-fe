@@ -1,8 +1,9 @@
 import { CreateHabitRequest, HabitFrequency } from "@/types/habits";
-import { X, Sparkles } from "lucide-react";
+import { X, CirclePlus } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 interface HabitFormProps {
   onClose: () => void;
@@ -102,6 +103,17 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
+    if (formData.habitType === "measurable") {
+      if (!formData.targetValue || formData.targetValue <= 0) {
+        toast.error("Please enter a goal target value greater than 0");
+        return;
+      }
+      if (!formData.targetUnit || !formData.targetUnit.trim()) {
+        toast.error("Please enter a target unit (e.g., km, minutes)");
+        return;
+      }
+    }
+
     // Clean up data before submit
     const submissionData = { ...formData };
 
@@ -156,7 +168,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-500" />
+            <CirclePlus className="w-5 h-5 text-green-500" />
             New Habit
           </h2>
           <button

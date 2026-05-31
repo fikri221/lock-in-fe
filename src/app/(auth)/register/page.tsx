@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, Check, LockKeyholeOpenIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, Check, LockKeyholeOpenIcon, UserPlus, Zap } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
 import { GoogleCredentialResponse, GoogleLogin } from "@react-oauth/google";
 import {
@@ -38,6 +38,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Password strength checker
   const getPasswordStrength = (password: string) => {
@@ -299,6 +300,8 @@ export default function RegisterPage() {
             <input
               type="checkbox"
               id="terms-checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
               required
               className="mt-0.5 w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 bg-transparent cursor-pointer shrink-0"
             />
@@ -416,7 +419,7 @@ export default function RegisterPage() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !agreedToTerms}
             className="w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-semibold hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-2 text-sm shadow-sm"
           >
             {loading ? (
@@ -425,7 +428,19 @@ export default function RegisterPage() {
                 <span>{isAuthenticated && user?.isAnonymous ? "Upgrading account..." : "Creating account..."}</span>
               </div>
             ) : (
-              isAuthenticated && user?.isAnonymous ? "Upgrade Account" : "Create Account"
+              <div className="relative w-full flex items-center justify-center">
+                {isAuthenticated && user?.isAnonymous ? (
+                  <>
+                    <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
+                    <span>Upgrade Account</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
+                    <span>Create Account</span>
+                  </>
+                )}
+              </div>
             )}
           </button>
         </form>

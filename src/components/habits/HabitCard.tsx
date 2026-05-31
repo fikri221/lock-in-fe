@@ -79,7 +79,7 @@ export default function HabitCard({
         )
         .pop() || habit.logs?.[habit.logs.length - 1]; // Fallback to last log if date check fails or for immediate update
 
-    const currentValue = latestLog?.actualValue || 0;
+    const currentValue = Number(latestLog?.actualValue ?? 0);
     progressPercentage = Math.min(
       100,
       (currentValue / (habit.targetValue || 1)) * 100,

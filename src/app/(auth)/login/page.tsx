@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import { Eye, EyeOff, Loader2, LockKeyholeIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, LockKeyholeIcon, LogIn, User } from "lucide-react";
 import { isAxiosError } from "@/utils/errorHandlers";
 import { GoogleCredentialResponse, GoogleLogin } from "@react-oauth/google";
 import {
@@ -45,6 +45,11 @@ export default function LoginPage() {
   const handleContinueAsGuest = async () => {
     setLoading(true);
     try {
+      if (isAuthenticated && user?.isAnonymous) {
+        toast.success("Welcome back, Guest! 🌱");
+        router.push("/");
+        return;
+      }
       await loginAnonymously();
       toast.success("Welcome! Entered as a Guest. 🌱");
       router.push("/");
@@ -182,7 +187,7 @@ export default function LoginPage() {
           </div>
 
           {/* Remember & Forgot */}
-          <div className="flex items-center justify-between text-xs pt-1">
+          {/* <div className="flex items-center justify-between text-xs pt-1">
             <label className="flex items-center gap-2 cursor-pointer text-zinc-600 dark:text-zinc-400 select-none">
               <input
                 type="checkbox"
@@ -196,7 +201,7 @@ export default function LoginPage() {
             >
               Forgot password?
             </button>
-          </div>
+          </div> */}
 
           <div className="pt-2 flex items-start gap-2 group">
             <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal">
@@ -322,7 +327,10 @@ export default function LoginPage() {
                 <span>Signing in...</span>
               </div>
             ) : (
-              "Sign in"
+              <div className="relative w-full flex items-center justify-center">
+                <LogIn className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
+                <span>Sign in</span>
+              </div>
             )}
           </button>
         </form>
@@ -334,7 +342,17 @@ export default function LoginPage() {
           onClick={handleContinueAsGuest}
           className="w-full mt-3 py-3 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 rounded-xl font-semibold transition-all text-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-sm"
         >
-          Continue as Guest
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Please wait...</span>
+            </div>
+          ) : (
+            <div className="relative w-full flex items-center justify-center">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" />
+              <span>Continue as Guest</span>
+            </div>
+          )}
         </button>
 
         {/* Divider */}

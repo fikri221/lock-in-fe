@@ -244,7 +244,7 @@ export default function HabitDetailPage() {
                   strokeDashoffset={(() => {
                     if (habit.habitType === "measurable") {
                       const maxVal = habit.targetValue || 1;
-                      const actualValue = todayLog?.actualValue || 0;
+                      const actualValue = Number(todayLog?.actualValue ?? 0);
                       const progressPercent = Math.min(
                         100,
                         Math.max(0, (actualValue / maxVal) * 100),
@@ -263,7 +263,7 @@ export default function HabitDetailPage() {
                 <div className="text-4xl mb-1">{habit.icon}</div>
                 <div className="text-xs font-bold text-zinc-500">
                   {habit.habitType === "measurable" ? (
-                    `${todayLog?.actualValue || 0} / ${habit.targetValue || 0}`
+                    `${Number(todayLog?.actualValue ?? 0)} / ${habit.targetValue || 0}`
                   ) : (
                     `${todayLog?.status === LogCompletionType.COMPLETED ? 1 : 0} / 1`
                   )}
@@ -385,7 +385,7 @@ export default function HabitDetailPage() {
               <div className="flex items-center justify-center gap-6">
                 <button
                   onClick={async () => {
-                    const currentVal = todayLog?.actualValue || 0;
+                    const currentVal = Number(todayLog?.actualValue ?? 0);
                     const newVal = Math.max(0, currentVal - 1);
                     if (newVal !== currentVal) {
                       try {
@@ -413,7 +413,7 @@ export default function HabitDetailPage() {
                 </div>
                 <button
                   onClick={async () => {
-                    const currentVal = todayLog?.actualValue || 0;
+                    const currentVal = Number(todayLog?.actualValue ?? 0);
                     const newVal = Math.max(0, currentVal + 1);
                     try {
                       await completeHabit(habit.id, {

@@ -4,6 +4,8 @@
  * and push subscription management.
  */
 
+import { notificationAPI } from "@/lib/api";
+
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 
 /**
@@ -166,4 +168,31 @@ export async function isSubscribedToPush(): Promise<boolean> {
 
   const subscription = await registration.pushManager.getSubscription();
   return !!subscription;
+}
+
+/**
+ * Synchronize browser push subscription with current active user
+ */
+export async function syncPushSubscription(): Promise<void> {
+  if (!isPushSupported()) return;
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) return;
+
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      const subscriptionJSON = subscription.toJSON();
+      const subscriptionData = {
+        endpoint: subscriptionJSON.endpoint!,
+        p256dh: subscriptionJSON.keys!.p256dh!,
+        auth: subscriptionJSON.keys!.auth!,
+        userAgent: navigator.userAgent,
+      };
+      await notificationAPI.subscribe(subscriptionData);
+      console.log('✅ Push subscription synchronized with backend');
+    }
+  } catch (error) {
+    console.error('Failed to sync push subscription:', error);
+  }
 }
