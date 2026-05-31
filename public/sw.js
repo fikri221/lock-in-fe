@@ -96,3 +96,12 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("notificationclose", (event) => {
     console.log("Notification closed", event.notification);
 });
+
+/**
+ * Handle Fetch requests
+ * Required for PWA installation criteria
+ */
+self.addEventListener("fetch", (event) => {
+    // Pass-through fetch handler for PWA installation requirements
+    event.respondWith(fetch(event.request));
+});
