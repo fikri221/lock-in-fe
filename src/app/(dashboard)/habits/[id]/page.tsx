@@ -24,7 +24,7 @@ export default function HabitDetailPage() {
   const params = useParams();
   const habitId = params.id as string;
 
-  const { habits, loading, deleteHabit, updateHabit, completeHabit } =
+  const { habits, loading, deleteHabit, updateHabit, completeHabit, cancelHabit } =
     useHabits(new Date().toDateString());
 
   // Derive habit directly instead of using local state to avoid infinite loops
@@ -90,18 +90,12 @@ export default function HabitDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (
-      confirm(
-        "Are you sure you want to delete this habit? This cannot be undone.",
-      )
-    ) {
-      try {
-        await deleteHabit(habitId);
-        toast.success("Habit deleted");
-        router.push("/");
-      } catch (error) {
-        console.error("Error deleting habit:", error);
-      }
+    try {
+      await deleteHabit(habitId);
+      toast.success("Habit deleted");
+      router.push("/");
+    } catch (error) {
+      console.error("Error deleting habit:", error);
     }
   };
 
@@ -389,14 +383,18 @@ export default function HabitDetailPage() {
                     const newVal = Math.max(0, currentVal - 1);
                     if (newVal !== currentVal) {
                       try {
-                        await completeHabit(habit.id, {
-                          status:
-                            newVal > 0
-                              ? LogCompletionType.COMPLETED
-                              : LogCompletionType.CANCELLED,
-                          actualValue: newVal,
-                          logDate: new Date(),
-                        });
+                        if (newVal > 0) {
+                          await completeHabit(habit.id, {
+                            status: LogCompletionType.COMPLETED,
+                            actualValue: newVal,
+                            logDate: new Date(),
+                          });
+                        } else {
+                          await cancelHabit(habit.id, {
+                            status: LogCompletionType.CANCELLED,
+                            logDate: new Date(),
+                          });
+                        }
                       } catch (e) {
                         console.error("Error decrementing habit:", e);
                       }

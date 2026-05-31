@@ -193,6 +193,7 @@ export default function Dashboard() {
     loading,
     createHabit,
     completeHabit,
+    cancelHabit,
     skipHabit,
     deleteHabit,
   } = useHabits(selectedDate.toDateString());
@@ -262,15 +263,22 @@ export default function Dashboard() {
       data?: { actualValue?: number; logDate?: Date },
     ) => {
       try {
-        await completeHabit(habitId, {
-          status: LogCompletionType.COMPLETED,
-          ...data,
-        });
+        if (data && data.actualValue === 0) {
+          await cancelHabit(habitId, {
+            status: LogCompletionType.CANCELLED,
+            logDate: data.logDate || selectedDate,
+          });
+        } else {
+          await completeHabit(habitId, {
+            status: LogCompletionType.COMPLETED,
+            ...data,
+          });
+        }
       } catch (error) {
         console.error("Error completing habit:", error);
       }
     },
-    [completeHabit],
+    [completeHabit, cancelHabit, selectedDate],
   );
 
   const handleSkipHabit = useCallback(
@@ -290,12 +298,10 @@ export default function Dashboard() {
   const handleDeleteHabit = useCallback(
     async (habitId: string) => {
       setDraggingId(null);
-      if (confirm("Are you sure you want to delete this habit?")) {
-        try {
-          await deleteHabit(habitId);
-        } catch (error) {
-          console.error("Error deleting habit:", error);
-        }
+      try {
+        await deleteHabit(habitId);
+      } catch (error) {
+        console.error("Error deleting habit:", error);
       }
     },
     [deleteHabit],
