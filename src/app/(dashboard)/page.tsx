@@ -277,6 +277,7 @@ export default function Dashboard() {
       try {
         if (data && data.actualValue === 0) {
           await cancelHabit(habitId, {
+            ...data,
             status: LogCompletionType.CANCELLED,
             logDate: data.logDate || selectedDate,
           });
