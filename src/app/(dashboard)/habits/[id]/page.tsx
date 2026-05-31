@@ -15,7 +15,7 @@ import {
   Save,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useHabits } from "@/hooks/useHabits";
+import { useHabits, formatDateLocal } from "@/hooks/useHabits";
 import { LogCompletion, LogCompletionType } from "@/types/habits";
 import { HabitCharts } from "@/components/charts";
 
@@ -68,10 +68,10 @@ export default function HabitDetailPage() {
   // Find today's log once to avoid instantiating multiple Date objects during render
   const todayLog = useMemo(() => {
     if (!habit?.logs || habit.logs.length === 0) return undefined;
-    const todayStr = new Date().toDateString();
+    const todayStr = formatDateLocal(new Date());
     for (let i = habit.logs.length - 1; i >= 0; i--) {
       const l = habit.logs[i];
-      if (new Date(l.logDate || l.createdAt || "").toDateString() === todayStr) {
+      if (formatDateLocal(l.logDate || l.createdAt || "") === todayStr) {
         return l;
       }
     }

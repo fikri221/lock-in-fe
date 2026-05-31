@@ -4,6 +4,7 @@ import { Habit, LogCompletionType } from "@/types/habits";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { memo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatDateLocal } from "@/hooks/useHabits";
 
 interface TapViewCardProps {
   habit: Habit;
@@ -40,8 +41,8 @@ export const TapViewCard = memo(function TapViewCard({
 
     const log = habit.logs?.find(
       (l) =>
-        new Date(l.logDate || l.createdAt || "").toDateString() ===
-        date.toDateString(),
+        formatDateLocal(l.logDate || l.createdAt || "") ===
+        formatDateLocal(date),
     );
 
     if (habit.habitType === "boolean") {
@@ -86,8 +87,8 @@ export const TapViewCard = memo(function TapViewCard({
         {days.map((date) => {
           const log = habit.logs?.find(
             (l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              date.toDateString(),
+              formatDateLocal(l.logDate || l.createdAt || "") ===
+              formatDateLocal(date),
           );
 
           const isCompleted = log?.status === LogCompletionType.COMPLETED;

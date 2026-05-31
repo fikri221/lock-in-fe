@@ -11,8 +11,13 @@ import { isAxiosError } from "@/utils/errorHandlers";
 import { useHabitStore } from "@/store/habitStore";
 import { useAuthStore } from "@/store/authStore";
 
-const formatDateLocal = (date: Date) => {
+export const formatDateLocal = (date: Date | string): string => {
+  if (!date) return "";
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
   const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const year = d.getFullYear();
@@ -46,7 +51,7 @@ export const useHabits = (
       }
       const params =
         typeof dateOrRange === "string"
-          ? { date: dateOrRange, active: true }
+          ? { date: formatDateLocal(dateOrRange), active: true }
           : { ...dateOrRange, active: true };
 
       const response = await habitsAPI.getHabits(params);
@@ -163,8 +168,8 @@ export const useHabits = (
           const logDate = new Date(logCompletion.logDate || new Date());
           const existingLogIndex = (h.logs || []).findIndex(
             (l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              logDate.toDateString(),
+              formatDateLocal(l.logDate || l.createdAt || "") ===
+              formatDateLocal(logDate),
           );
 
           const newLogs = [...(h.logs || [])];
@@ -228,8 +233,8 @@ export const useHabits = (
               const logDate = new Date(logCompletion.logDate || new Date());
               // Replace the log for this date with the real one from server
               const newLogs = (h.logs || []).map((l) =>
-                new Date(l.logDate || l.createdAt || "").toDateString() ===
-                logDate.toDateString()
+                formatDateLocal(l.logDate || l.createdAt || "") ===
+                formatDateLocal(logDate)
                   ? newLog
                   : l,
               );
@@ -266,8 +271,8 @@ export const useHabits = (
           const logDate = new Date(logCompletion.logDate || new Date());
           const existingLogIndex = (h.logs || []).findIndex(
             (l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              logDate.toDateString(),
+              formatDateLocal(l.logDate || l.createdAt || "") ===
+              formatDateLocal(logDate),
           );
 
           const newLogs = [...(h.logs || [])];
@@ -348,8 +353,8 @@ export const useHabits = (
           const logDate = new Date(logCompletion.logDate || new Date());
           const existingLogIndex = (h.logs || []).findIndex(
             (l) =>
-              new Date(l.logDate || l.createdAt || "").toDateString() ===
-              logDate.toDateString(),
+              formatDateLocal(l.logDate || l.createdAt || "") ===
+              formatDateLocal(logDate),
           );
 
           const newLogs = [...(h.logs || [])];
@@ -407,8 +412,8 @@ export const useHabits = (
             if (h.id === id) {
               const logDate = new Date(logCompletion.logDate || new Date());
               const newLogs = (h.logs || []).map((l) =>
-                new Date(l.logDate || l.createdAt || "").toDateString() ===
-                logDate.toDateString()
+                formatDateLocal(l.logDate || l.createdAt || "") ===
+                formatDateLocal(logDate)
                   ? newLog
                   : l,
               );

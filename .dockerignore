@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+.env.local
+.env.*.local
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.git
+.gitignore
+.vscode
+README.md
+Dockerfile
+*.tsbuildinfo

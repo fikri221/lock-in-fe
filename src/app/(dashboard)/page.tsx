@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, memo, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import { useHabits } from "@/hooks/useHabits";
+import { useHabits, formatDateLocal } from "@/hooks/useHabits";
 import { AnimatePresence, motion } from "framer-motion";
 import HabitForm from "@/components/habits/HabitForm";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
@@ -188,6 +188,18 @@ export default function Dashboard() {
   }, []);
 
   const { isAuthenticated, isLoading: authLoading, logout, loginAnonymously, user } = useAuthStore();
+  const queryParam = useMemo(() => {
+    if (interactionMode === "tap") {
+      const startDate = new Date(selectedDate);
+      startDate.setDate(startDate.getDate() - 3);
+      return {
+        startDate: formatDateLocal(startDate),
+        endDate: formatDateLocal(selectedDate),
+      };
+    }
+    return formatDateLocal(selectedDate);
+  }, [selectedDate, interactionMode]);
+
   const {
     habits,
     loading,
@@ -196,7 +208,7 @@ export default function Dashboard() {
     cancelHabit,
     skipHabit,
     deleteHabit,
-  } = useHabits(selectedDate.toDateString());
+  } = useHabits(queryParam);
 
   // Filter habits for selected date
   const todaysHabits = useMemo(() => {
@@ -212,7 +224,7 @@ export default function Dashboard() {
   }, [habits, selectedDate]);
 
   const selectedDateStr = useMemo(
-    () => selectedDate.toDateString(),
+    () => formatDateLocal(selectedDate),
     [selectedDate],
   );
 
@@ -223,7 +235,7 @@ export default function Dashboard() {
       for (let i = h.logs.length - 1; i >= 0; i--) {
         const l = h.logs[i];
         if (
-          new Date(l.logDate || l.createdAt || "").toDateString() ===
+          formatDateLocal(l.logDate || l.createdAt || "") ===
           selectedDateStr
         ) {
           return l.status === LogCompletionType.COMPLETED;
@@ -414,7 +426,7 @@ export default function Dashboard() {
                 for (let i = habit.logs.length - 1; i >= 0; i--) {
                   const l = habit.logs[i];
                   if (
-                    new Date(l.logDate || l.createdAt || "").toDateString() ===
+                    formatDateLocal(l.logDate || l.createdAt || "") ===
                     selectedDateStr
                   ) {
                     log = l;
