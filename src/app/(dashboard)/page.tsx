@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useHabits } from "@/hooks/useHabits";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, Reorder, useDragControls } from "framer-motion";
 import HabitForm from "@/components/habits/HabitForm";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 import SettingsModal from "@/components/dashboard/SettingsModal";
@@ -32,6 +32,7 @@ interface HabitItemProps {
   onSkip: (id: string, data?: { logDate?: Date }) => void;
   onDelete: (id: string) => void;
   onDragToggle: (id: string, isDragging: boolean) => void;
+  dragHandleProps?: any;
 }
 
 const HabitItem = memo(
@@ -44,6 +45,7 @@ const HabitItem = memo(
     onSkip,
     onDelete,
     onDragToggle,
+    dragHandleProps,
   }: HabitItemProps) {
     const handleComplete = useCallback(() => {
       onComplete(habit.id, { logDate: selectedDate });
@@ -72,23 +74,7 @@ const HabitItem = memo(
     );
 
     return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{
-          opacity: 0,
-          scale: 0.8,
-          transition: { duration: 0.2 },
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 500,
-          damping: 30,
-          opacity: { duration: 0.2 },
-        }}
-        className="relative"
-      >
+      <div className="relative">
         {habit.habitType === "boolean" ? (
           <BooleanCard
             habit={habit}
@@ -98,6 +84,7 @@ const HabitItem = memo(
             onSkip={handleSkip}
             onDelete={handleDelete}
             onDragToggle={handleToggle}
+            dragHandleProps={dragHandleProps}
           />
         ) : (
           <MeasurableCard
@@ -107,9 +94,10 @@ const HabitItem = memo(
             onSetValue={handleSetValue}
             onDelete={handleDelete}
             onDragToggle={handleToggle}
+            dragHandleProps={dragHandleProps}
           />
         )}
-      </motion.div>
+      </div>
     );
   },
   (prev, next) => {
@@ -135,6 +123,36 @@ const HabitItem = memo(
     return true;
   },
 );
+
+interface ReorderableHabitProps {
+  habit: Habit;
+  children: (dragHandleProps: any) => React.ReactNode;
+}
+
+function ReorderableHabit({ habit, children }: ReorderableHabitProps) {
+  const dragControls = useDragControls();
+  const dragHandleProps = {
+    onPointerDown: (e: React.PointerEvent) => {
+      dragControls.start(e);
+    }
+  };
+
+  return (
+    <Reorder.Item
+      value={habit}
+      dragListener={false}
+      dragControls={dragControls}
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      className="relative block"
+    >
+      {children(dragHandleProps)}
+    </Reorder.Item>
+  );
+}
 
 export default function Dashboard() {
   const router = useRouter();
@@ -196,6 +214,8 @@ export default function Dashboard() {
     cancelHabit,
     skipHabit,
     deleteHabit,
+    updateHabit,
+    setHabits,
   } = useHabits(selectedDate.toDateString());
 
   // Filter habits for selected date
@@ -210,6 +230,34 @@ export default function Dashboard() {
       return true;
     });
   }, [habits, selectedDate]);
+
+  const handleReorder = useCallback((newTodaysHabits: Habit[]) => {
+    // 1. Reorder the full habits array from the store
+    const visibleIndices = habits
+      .map((h, i) => newTodaysHabits.some(vh => vh.id === h.id) ? i : -1)
+      .filter(i => i !== -1);
+
+    const nextHabits = [...habits];
+    visibleIndices.forEach((originalIndex, index) => {
+      nextHabits[originalIndex] = newTodaysHabits[index];
+    });
+
+    // 2. Assign sequential order values based on the new final sorted positions
+    const updatedHabits = nextHabits.map((h, idx) => ({ ...h, order: idx }));
+
+    // 3. Update local store (optimistic update)
+    setHabits(updatedHabits);
+
+    // 4. Save changed orders to the backend
+    updatedHabits.forEach((updatedHabit) => {
+      const originalHabit = habits.find(h => h.id === updatedHabit.id);
+      if (originalHabit && originalHabit.order !== updatedHabit.order) {
+        updateHabit(updatedHabit.id, { order: updatedHabit.order }).catch((err) => {
+          console.error(`Failed to update order for habit ${updatedHabit.id}:`, err);
+        });
+      }
+    });
+  }, [habits, setHabits, updateHabit]);
 
   const selectedDateStr = useMemo(
     () => selectedDate.toDateString(),
@@ -405,7 +453,12 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-        <div className="flex flex-col gap-3 pb-4">
+        <Reorder.Group
+          values={todaysHabits}
+          onReorder={handleReorder}
+          axis="y"
+          className="flex flex-col gap-3 pb-4"
+        >
           <AnimatePresence mode="popLayout">
             {todaysHabits.map((habit) => {
               // Find log by searching backwards
@@ -423,38 +476,36 @@ export default function Dashboard() {
                 }
               }
 
-              return interactionMode === "tap" ? (
-                <motion.div
-                  key={habit.id}
-                  layout
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                >
-                  <TapViewCard
-                    habit={habit}
-                    selectedDate={selectedDate}
-                    onComplete={handleCompleteHabit}
-                    onSkip={handleSkipHabit}
-                  />
-                </motion.div>
-              ) : (
-                <HabitItem
-                  key={habit.id}
-                  habit={habit}
-                  log={log}
-                  selectedDate={selectedDate}
-                  interactionMode={interactionMode}
-                  onComplete={handleCompleteHabit}
-                  onSkip={handleSkipHabit}
-                  onDelete={handleDeleteHabit}
-                  onDragToggle={handleDragToggle}
-                />
+              return (
+                <ReorderableHabit key={habit.id} habit={habit}>
+                  {(dragHandleProps) =>
+                    interactionMode === "tap" ? (
+                      <TapViewCard
+                        habit={habit}
+                        selectedDate={selectedDate}
+                        onComplete={handleCompleteHabit}
+                        onSkip={handleSkipHabit}
+                        dragHandleProps={dragHandleProps}
+                      />
+                    ) : (
+                      <HabitItem
+                        habit={habit}
+                        log={log}
+                        selectedDate={selectedDate}
+                        interactionMode={interactionMode}
+                        onComplete={handleCompleteHabit}
+                        onSkip={handleSkipHabit}
+                        onDelete={handleDeleteHabit}
+                        onDragToggle={handleDragToggle}
+                        dragHandleProps={dragHandleProps}
+                      />
+                    )
+                  }
+                </ReorderableHabit>
               );
             })}
           </AnimatePresence>
-        </div>
+        </Reorder.Group>
 
         {habits.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">

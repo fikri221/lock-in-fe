@@ -10,6 +10,7 @@ import {
 import { useRef, useState, useEffect, memo, startTransition } from "react";
 import { Habit, LogCompletion, LogCompletionType } from "@/types/habits";
 import { useRouter } from "next/navigation";
+import { GripVertical } from "lucide-react";
 
 type CardPhase = "idle" | "flying-out" | "dropping-in";
 
@@ -21,6 +22,7 @@ interface BooleanCardProps {
   onSkip: () => void;
   onDelete?: () => void;
   onDragToggle?: (isDragging: boolean) => void;
+  dragHandleProps?: any;
 }
 
 export const BooleanCard = memo(function BooleanCard({
@@ -31,6 +33,7 @@ export const BooleanCard = memo(function BooleanCard({
   onSkip,
   onDelete,
   onDragToggle,
+  dragHandleProps,
 }: BooleanCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -390,6 +393,18 @@ export const BooleanCard = memo(function BooleanCard({
           className="pointer-events-none absolute inset-0 rounded-2xl"
           style={{ backgroundColor: phase === "idle" ? bg : undefined }}
         />
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            className="cursor-grab active:cursor-grabbing p-1 -ml-2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 relative z-20 shrink-0"
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              dragHandleProps.onPointerDown?.(e);
+            }}
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+        )}
         <span className="text-2xl sm:text-3xl shrink-0 relative z-10">
           {habit.icon}
         </span>

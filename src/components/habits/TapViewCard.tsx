@@ -4,6 +4,7 @@ import { Habit, LogCompletionType } from "@/types/habits";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { memo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { GripVertical } from "lucide-react";
 
 interface TapViewCardProps {
   habit: Habit;
@@ -13,6 +14,7 @@ interface TapViewCardProps {
     data?: { actualValue?: number; logDate?: Date },
   ) => void;
   onSkip: (id: string, data?: { logDate?: Date }) => void;
+  dragHandleProps?: any;
 }
 
 export const TapViewCard = memo(function TapViewCard({
@@ -20,6 +22,7 @@ export const TapViewCard = memo(function TapViewCard({
   selectedDate,
   onComplete,
   onSkip,
+  dragHandleProps,
 }: TapViewCardProps) {
   const router = useRouter();
 
@@ -73,6 +76,18 @@ export const TapViewCard = memo(function TapViewCard({
       onClick={() => router.push(`/habits/${habit.id}`)}
       className="flex items-center justify-between p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
     >
+      {dragHandleProps && (
+        <div
+          {...dragHandleProps}
+          className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 relative z-20 shrink-0"
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            dragHandleProps.onPointerDown?.(e);
+          }}
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+      )}
       <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
         <span className="text-xl shrink-0 bg-zinc-100 dark:bg-zinc-800 w-10 h-10 flex items-center justify-center rounded-xl">
           {habit.icon}

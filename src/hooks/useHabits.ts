@@ -463,5 +463,6 @@ export const useHabits = (
     cancelHabit,
     completeHabit,
     skipHabit,
+    setHabits,
   };
 };

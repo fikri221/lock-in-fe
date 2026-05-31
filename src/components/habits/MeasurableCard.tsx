@@ -10,6 +10,7 @@ import {
 } from "framer-motion";
 import { useRef, useState, useCallback, useEffect, memo } from "react";
 import { useRouter } from "next/navigation";
+import { GripVertical } from "lucide-react";
 
 /* ─── Petal type (for flower bloom at max) ─── */
 interface Petal {
@@ -53,6 +54,7 @@ interface MeasurableCardProps {
   onSetValue: (data: { actualValue: number }) => void;
   onDelete?: () => void;
   onDragToggle?: (isDragging: boolean) => void;
+  dragHandleProps?: any;
 }
 
 export const MeasurableCard = memo(function MeasurableCard({
@@ -62,6 +64,7 @@ export const MeasurableCard = memo(function MeasurableCard({
   onSetValue,
   onDelete,
   onDragToggle,
+  dragHandleProps,
 }: MeasurableCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const widthRef = useRef(0);
@@ -495,6 +498,18 @@ export const MeasurableCard = memo(function MeasurableCard({
           />
         </div>
         <div className="relative z-10 flex items-center gap-3 sm:gap-4 px-4 sm:px-5 py-4">
+          {dragHandleProps && (
+            <div
+              {...dragHandleProps}
+              className="cursor-grab active:cursor-grabbing p-1 -ml-2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 relative z-20 shrink-0"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                dragHandleProps.onPointerDown?.(e);
+              }}
+            >
+              <GripVertical className="w-4 h-4" />
+            </div>
+          )}
           <span className="text-2xl sm:text-3xl shrink-0 cursor-pointer hover:opacity-80 active:scale-95 transition-all">
             {habit.icon}
           </span>

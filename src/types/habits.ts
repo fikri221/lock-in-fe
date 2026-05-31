@@ -36,6 +36,7 @@ export interface CreateHabitRequest {
   requiresGoodWeather?: boolean;
   reminderEnabled?: boolean;
   isActive: boolean;
+  order?: number;
 }
 
 export interface UpdateHabitRequest {
@@ -56,6 +57,7 @@ export interface UpdateHabitRequest {
   requiresGoodWeather?: boolean;
   reminderEnabled?: boolean;
   isActive?: boolean;
+  order?: number;
 }
 
 export interface Habit extends CreateHabitRequest {
