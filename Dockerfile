@@ -18,7 +18,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Expose build arguments for client-side environment variables
-ARG NEXT_PUBLIC_API_URL="https://lock-in-be-431008242390.asia-southeast1.run.app"
+ARG NEXT_PUBLIC_API_URL="https://lock-in-be-431008242390.asia-southeast1.run.app/api"
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID="431008242390-9cj9k00mtdn1am79k8pq8fftf6hnehig.apps.googleusercontent.com"
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY="BERHaDDsPjHCVHXI7kxKSY09pjnzfkydaIUAX9ZtNTO0VgjSdZIs8Jg29pfiTj61pPW9ficB0mnaBi7McOhrxJY"
 
