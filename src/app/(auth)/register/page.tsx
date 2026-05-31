@@ -25,6 +25,8 @@ export default function RegisterPage() {
     loginWithGoogle,
     isAuthenticated,
     isLoading: authLoading,
+    user,
+    upgrade,
   } = useAuthStore();
 
   const [formData, setFormData] = useState({
@@ -58,12 +60,12 @@ export default function RegisterPage() {
     "bg-green-500",
   ];
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and NOT a guest
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && isAuthenticated && !user?.isAnonymous) {
       router.push("/");
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +89,13 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register(formData.name, formData.email, formData.password);
-      toast.success("Account created successfully! 🎉");
+      if (isAuthenticated && user?.isAnonymous) {
+        await upgrade(formData.name, formData.email, formData.password);
+        toast.success("Account upgraded successfully! All your habits are saved. 🎉");
+      } else {
+        await register(formData.name, formData.email, formData.password);
+        toast.success("Account created successfully! 🎉");
+      }
       router.push("/");
     } catch (error: unknown) {
       if (isAxiosError(error)) {
@@ -143,10 +150,10 @@ export default function RegisterPage() {
             <LockKeyholeOpenIcon className="w-6 h-6 text-white dark:text-zinc-900" />
           </div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-            Create an account
+            {isAuthenticated && user?.isAnonymous ? "Upgrade your account" : "Create an account"}
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-2 text-sm">
-            Start building better habits today
+            {isAuthenticated && user?.isAnonymous ? "Save all your guest habits permanently" : "Start building better habits today"}
           </p>
         </div>
 
@@ -415,10 +422,10 @@ export default function RegisterPage() {
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Creating account...</span>
+                <span>{isAuthenticated && user?.isAnonymous ? "Upgrading account..." : "Creating account..."}</span>
               </div>
             ) : (
-              "Create Account"
+              isAuthenticated && user?.isAnonymous ? "Upgrade Account" : "Create Account"
             )}
           </button>
         </form>

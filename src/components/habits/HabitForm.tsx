@@ -186,6 +186,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                         icon: habit.icon,
                         category: habit.type,
                         color: category?.color || "#6b7280",
+                        scheduledTime: habit.time,
                       });
                       setShowSuggestions(false);
                     }}
@@ -445,7 +446,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                   reminderEnabled: !formData.reminderEnabled,
                 })
               }
-              className={`relative w-11 h-6 rounded-full transition-colors ${formData.reminderEnabled ? "bg-zinc-900 dark:bg-zinc-100" : "bg-zinc-200 dark:bg-zinc-700"}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${formData.reminderEnabled ? "bg-blue-600 dark:bg-blue-500" : "bg-zinc-200 dark:bg-zinc-700"}`}
             >
               <div
                 className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${formData.reminderEnabled ? "translate-x-5" : "translate-x-0"}`}

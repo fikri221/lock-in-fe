@@ -92,19 +92,31 @@ export default function CalendarChart({
 
   // Convert array to date map
   const dataMap = useMemo(() => {
-    const map: { [key: string]: number } = {};
+    const map: { [key: string]: { actualValue: number; status: string } } = {};
     data.forEach((item) => {
-      map[item.date] = item.actualValue;
+      map[item.date] = { actualValue: item.actualValue, status: item.status };
     });
     return map;
   }, [data]);
 
-  // Get color intensity based on value
-  const getColor = (value: number | undefined) => {
-    if (!value || value === 0) return "bg-zinc-100 dark:bg-zinc-800";
+  // Get color intensity based on value and status
+  const getColor = (value: number | undefined, status: string | undefined) => {
+    const isCompleted = status === "COMPLETED";
+
+    // For boolean habits (where targetValue is falsy or 0) or if status is completed:
+    if (isCompleted && (!targetValue || targetValue === 0)) {
+      return "bg-emerald-600 dark:bg-emerald-500";
+    }
+
+    if (!value || value === 0) {
+      if (isCompleted) {
+        return "bg-emerald-600 dark:bg-emerald-500";
+      }
+      return "bg-zinc-100 dark:bg-zinc-800";
+    }
 
     // Determine intensity levels (adjust thresholds as needed)
-    const percentage = (value / targetValue) * 100;
+    const percentage = targetValue > 0 ? (value / targetValue) * 100 : 100;
 
     if (percentage >= 75) return "bg-emerald-600 dark:bg-emerald-500";
     if (percentage >= 50) return "bg-emerald-500 dark:bg-emerald-600";
@@ -215,12 +227,14 @@ export default function CalendarChart({
                       if (!dateStr)
                         return <div key={dayIndex} className={CELL_SIZE} />;
 
-                      const value = dataMap[dateStr];
+                      const item = dataMap[dateStr];
+                      const value = item?.actualValue;
+                      const status = item?.status;
 
                       return (
                         <div
                           key={dateStr}
-                          className={`${CELL_SIZE} rounded-sm ${getColor(value)} hover:ring-2 hover:ring-emerald-500 cursor-pointer transition-all`}
+                          className={`${CELL_SIZE} rounded-sm ${getColor(value, status)} hover:ring-2 hover:ring-emerald-500 cursor-pointer transition-all`}
                           onMouseEnter={(e) => {
                             setHoveredDate(dateStr);
                             setHoveredPosition({ x: e.clientX, y: e.clientY });
@@ -259,7 +273,15 @@ export default function CalendarChart({
                   {format(new Date(hoveredDate), "MMM dd, yyyy")}
                 </p>
                 <p className="text-xs text-green-300 mt-1">
-                  Value: {dataMap[hoveredDate] || 0}
+                  Value: {(() => {
+                    const item = dataMap[hoveredDate];
+                    if (!item) return "Not Completed";
+                    const isBoolean = !targetValue || targetValue === 0;
+                    if (isBoolean) {
+                      return item.status === "COMPLETED" ? "Completed" : "Not Completed";
+                    }
+                    return `${item.actualValue || (item.status === "COMPLETED" ? targetValue : 0)} / ${targetValue}`;
+                  })()}
                 </p>
               </div>
             )}

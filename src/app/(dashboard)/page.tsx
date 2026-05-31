@@ -187,7 +187,7 @@ export default function Dashboard() {
     });
   }, []);
 
-  const { isAuthenticated, isLoading: authLoading, logout } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading, logout, loginAnonymously, user } = useAuthStore();
   const {
     habits,
     loading,
@@ -237,11 +237,14 @@ export default function Dashboard() {
   }, [todaysHabits, selectedDateStr]);
 
   useEffect(() => {
-    // Check authentication
+    // Check authentication, automatically log in anonymously if unauthenticated
     if (!authLoading && !isAuthenticated) {
-      router.push("/login");
+      loginAnonymously().catch((err) => {
+        console.error("Auto guest login failed, redirecting to login page", err);
+        router.push("/login");
+      });
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, router, loginAnonymously]);
 
   // useEffect(() => {
   //   // Mock weather data
@@ -308,8 +311,12 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    logout();
-    router.push("/login");
+    if (user?.isAnonymous) {
+      router.push("/login");
+    } else {
+      logout();
+      router.push("/login");
+    }
   };
 
   // Show loading state

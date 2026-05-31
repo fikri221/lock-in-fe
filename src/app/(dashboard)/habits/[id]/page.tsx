@@ -220,7 +220,7 @@ export default function HabitDetailPage() {
         {/* Habit Identity */}
         <div className="flex flex-col items-center text-center mb-8">
           {/* Identity Graphics */}
-          {!isEditing && habit.habitType === "measurable" ? (
+          {!isEditing ? (
             <div className="relative mb-6">
               {/* Circular Progress Bar */}
               <svg className="w-36 h-36 transform -rotate-90">
@@ -242,13 +242,18 @@ export default function HabitDetailPage() {
                   fill="transparent"
                   strokeDasharray={402} /* 2 * PI * r = ~402 for r=64 */
                   strokeDashoffset={(() => {
-                    const maxVal = habit.targetValue || 1;
-                    const actualValue = todayLog?.actualValue || 0;
-                    const progressPercent = Math.min(
-                      100,
-                      Math.max(0, (actualValue / maxVal) * 100),
-                    );
-                    return 402 - (progressPercent / 100) * 402;
+                    if (habit.habitType === "measurable") {
+                      const maxVal = habit.targetValue || 1;
+                      const actualValue = todayLog?.actualValue || 0;
+                      const progressPercent = Math.min(
+                        100,
+                        Math.max(0, (actualValue / maxVal) * 100),
+                      );
+                      return 402 - (progressPercent / 100) * 402;
+                    } else {
+                      const isCompletedToday = todayLog?.status === LogCompletionType.COMPLETED;
+                      return isCompletedToday ? 0 : 402;
+                    }
                   })()}
                   strokeLinecap="round"
                   className="text-emerald-500 transition-all duration-1000 ease-out"
@@ -257,7 +262,11 @@ export default function HabitDetailPage() {
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className="text-4xl mb-1">{habit.icon}</div>
                 <div className="text-xs font-bold text-zinc-500">
-                  {todayLog?.actualValue || 0} / {habit.targetValue || 0}
+                  {habit.habitType === "measurable" ? (
+                    `${todayLog?.actualValue || 0} / ${habit.targetValue || 0}`
+                  ) : (
+                    `${todayLog?.status === LogCompletionType.COMPLETED ? 1 : 0} / 1`
+                  )}
                 </div>
               </div>
             </div>

@@ -24,6 +24,8 @@ export default function LoginPage() {
     loginWithGoogle,
     isAuthenticated,
     isLoading: authLoading,
+    user,
+    loginAnonymously,
   } = useAuthStore();
 
   const [formData, setFormData] = useState({
@@ -33,12 +35,26 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and NOT a guest
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (!authLoading && isAuthenticated && !user?.isAnonymous) {
       router.push("/");
     }
-  }, [isAuthenticated, authLoading, router]);
+  }, [isAuthenticated, authLoading, user, router]);
+
+  const handleContinueAsGuest = async () => {
+    setLoading(true);
+    try {
+      await loginAnonymously();
+      toast.success("Welcome! Entered as a Guest. 🌱");
+      router.push("/");
+    } catch (error: unknown) {
+      console.error(error);
+      toast.error("Failed to enter as a guest. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,6 +326,16 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Continue as Guest */}
+        <button
+          type="button"
+          disabled={loading}
+          onClick={handleContinueAsGuest}
+          className="w-full mt-3 py-3 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300 rounded-xl font-semibold transition-all text-sm active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-sm"
+        >
+          Continue as Guest
+        </button>
 
         {/* Divider */}
         <div className="relative my-6">

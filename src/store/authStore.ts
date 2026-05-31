@@ -8,6 +8,7 @@ interface User {
   name?: string;
   email: string;
   timezone: string;
+  isAnonymous?: boolean;
 }
 
 interface AuthState {
@@ -19,9 +20,11 @@ interface AuthState {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  loginAnonymously: () => Promise<void>;
+  upgrade: (name: string, email: string, password: string) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isLoading: true,
@@ -29,7 +32,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email: string, password: string) => {
     try {
-      const response = await authAPI.login({ email, password });
+      const guestUserId = get().user?.isAnonymous ? get().user?.id : undefined;
+      const response = await authAPI.login({ email, password, guestUserId });
       const { user } = response.data.data;
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -49,7 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loginWithGoogle: async (credential: string) => {
     try {
-      const response = await authAPI.googleLogin(credential);
+      const guestUserId = get().user?.isAnonymous ? get().user?.id : undefined;
+      const response = await authAPI.googleLogin(credential, guestUserId);
       const { user } = response.data.data;
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -69,8 +74,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   register: async (name: string, email: string, password: string) => {
     try {
-      const response = await authAPI.register({ name, email, password });
-      const { user } = response.data;
+      const guestUserId = get().user?.isAnonymous ? get().user?.id : undefined;
+      const response = await authAPI.register({ name, email, password, guestUserId });
+      const user = response.data.data?.user || response.data.user;
 
       localStorage.setItem("user", JSON.stringify(user));
 
@@ -121,6 +127,48 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: null,
         isAuthenticated: false,
       });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  loginAnonymously: async () => {
+    try {
+      set({ isLoading: true });
+      const response = await authAPI.loginAnonymous();
+      const { user } = response.data.data;
+      localStorage.setItem("user", JSON.stringify(user));
+
+      set({
+        user,
+        isAuthenticated: true,
+      });
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message =
+        err?.response?.data?.error ?? err?.message ?? "Guest login failed";
+      throw new Error(message);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  upgrade: async (name: string, email: string, password: string) => {
+    try {
+      set({ isLoading: true });
+      const response = await authAPI.upgrade({ name, email, password });
+      const { user } = response.data.data;
+      localStorage.setItem("user", JSON.stringify(user));
+
+      set({
+        user,
+        isAuthenticated: true,
+      });
+    } catch (error: unknown) {
+      const err = error as ApiError;
+      const message =
+        err?.response?.data?.error ?? err?.message ?? "Upgrade failed";
+      throw new Error(message);
     } finally {
       set({ isLoading: false });
     }

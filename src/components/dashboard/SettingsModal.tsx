@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, User, Bell, LogOut, Moon, Sun, Monitor, Clock, Send, CheckCircle, XCircle, AlertCircle, Loader2 } from "lucide-react";
+import { X, User, Bell, LogOut, LogIn, Moon, Sun, Monitor, Clock, Send, XCircle, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useTheme } from "next-themes";
 import { useEffect, useState, useCallback } from "react";
@@ -392,13 +392,23 @@ export default function SettingsModal({ onClose, onLogout }: SettingsModalProps)
 
           {/* Danger Zone */}
           <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <button
-              onClick={onLogout}
-              className="w-full flex items-center justify-center gap-2 p-4 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl transition-colors font-semibold text-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
+            {user?.isAnonymous ? (
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center justify-center gap-2 p-4 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-2xl transition-colors font-semibold text-sm"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </button>
+            ) : (
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center justify-center gap-2 p-4 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl transition-colors font-semibold text-sm"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       </motion.div>

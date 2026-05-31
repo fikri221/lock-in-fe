@@ -64,12 +64,6 @@ api.interceptors.response.use(
         originalRequest.url === "/auth/refresh" ||
         originalRequest.url === "/auth/login"
       ) {
-        if (
-          typeof window !== "undefined" &&
-          !window.location.pathname.startsWith("/login")
-        ) {
-          window.location.href = "/login";
-        }
         return Promise.reject(error);
       }
 
@@ -94,13 +88,6 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
-        // If the refresh token is also invalid/expired, throw user to login
-        if (
-          typeof window !== "undefined" &&
-          !window.location.pathname.startsWith("/login")
-        ) {
-          window.location.href = "/login";
-        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -112,18 +99,23 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email: string; password: string; guestUserId?: string }) =>
     api.post("/auth/login", data),
 
-  googleLogin: (credential: string) =>
-    api.post("/auth/google", { credential }),
+  googleLogin: (credential: string, guestUserId?: string) =>
+    api.post("/auth/google", { credential, guestUserId }),
 
-  register: (data: { name: string; email: string; password: string }) =>
+  register: (data: { name: string; email: string; password: string; guestUserId?: string }) =>
     api.post("/auth/register", data),
 
   logout: () => api.post("/auth/logout"),
 
   getProfile: () => api.get("/auth/me"),
+
+  loginAnonymous: () => api.post("/auth/anonymous"),
+
+  upgrade: (data: { name: string; email: string; password: string }) =>
+    api.post("/auth/upgrade", data),
 };
 
 export const habitsAPI = {

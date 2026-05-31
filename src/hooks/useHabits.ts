@@ -9,10 +9,20 @@ import {
 import { toast } from "sonner";
 import { isAxiosError } from "@/utils/errorHandlers";
 import { useHabitStore } from "@/store/habitStore";
+import { useAuthStore } from "@/store/authStore";
+
+const formatDateLocal = (date: Date) => {
+  const d = new Date(date);
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${year}-${month}-${day}`;
+};
 
 export const useHabits = (
   dateOrRange: string | { startDate: string; endDate: string },
 ) => {
+  const { user, isAuthenticated } = useAuthStore();
   const habits = useHabitStore((state) => state.habits);
   const setHabits = useHabitStore((state) => state.setHabits);
   const loading = useHabitStore((state) => state.loading);
@@ -24,6 +34,7 @@ export const useHabits = (
   const hasFetchedRef = useRef(false);
 
   const fetchHabits = useCallback(async () => {
+    if (!isAuthenticated || !user?.id) return;
     try {
       // Stale-while-revalidate (SWR) Pattern:
       // Hanya tampilkan loading screen jika kita benar-benar belum punya data.
@@ -58,11 +69,11 @@ export const useHabits = (
       } else {
         setError("Failed to fetch habits");
       }
-      toast.error("Failed to load habits");
+      // toast.error("Failed to load habits");
     } finally {
       setLoading(false);
     }
-  }, [dateOrRange, setHabits, setLoading, setError]);
+  }, [dateOrRange, setHabits, setLoading, setError, isAuthenticated, user?.id]);
 
   const createHabit = async (data: CreateHabitRequest) => {
     // Optimistic update
@@ -198,7 +209,13 @@ export const useHabits = (
     );
 
     try {
-      const response = await habitsAPI.logCompletion(id, logCompletion);
+      const payload: LogCompletion = {
+        ...logCompletion,
+        logDate: logCompletion.logDate
+          ? formatDateLocal(new Date(logCompletion.logDate))
+          : undefined,
+      };
+      const response = await habitsAPI.logCompletion(id, payload);
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
@@ -281,7 +298,13 @@ export const useHabits = (
     );
 
     try {
-      const response = await habitsAPI.cancelHabit(id, logCompletion);
+      const payload: LogCompletion = {
+        ...logCompletion,
+        logDate: logCompletion.logDate
+          ? formatDateLocal(new Date(logCompletion.logDate))
+          : undefined,
+      };
+      const response = await habitsAPI.cancelHabit(id, payload);
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
@@ -366,10 +389,14 @@ export const useHabits = (
     );
 
     try {
-      const response = await habitsAPI.logCompletion(id, {
+      const payload: LogCompletion = {
         ...logCompletion,
         status: LogCompletionType.SKIPPED,
-      });
+        logDate: logCompletion.logDate
+          ? formatDateLocal(new Date(logCompletion.logDate))
+          : undefined,
+      };
+      const response = await habitsAPI.logCompletion(id, payload);
       const newLog = response.data.habitLog;
 
       // Sync with server data (replace the optimistic log with the real one)
@@ -416,6 +443,10 @@ export const useHabits = (
       throw err;
     }
   };
+
+  useEffect(() => {
+    setHabits([]);
+  }, [user?.id, setHabits]);
 
   useEffect(() => {
     fetchHabits();
