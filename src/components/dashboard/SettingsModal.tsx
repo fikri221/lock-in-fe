@@ -207,10 +207,10 @@ export default function SettingsModal({ onClose, onLogout }: SettingsModalProps)
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="relative z-10 w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-zinc-50 dark:bg-zinc-900 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col"
+        className="relative z-10 w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 flex flex-col"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-t-3xl sm:rounded-t-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl rounded-t-3xl sm:rounded-t-2xl shadow-sm">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             Settings
           </h2>
@@ -228,7 +228,7 @@ export default function SettingsModal({ onClose, onLogout }: SettingsModalProps)
             <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Account
             </h3>
-            <div className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
+            <div className="flex items-center gap-4 p-4 bg-white/60 dark:bg-zinc-800/40 backdrop-blur-md rounded-2xl border border-white/40 dark:border-white/5 shadow-sm">
               <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                 <User className="w-6 h-6" />
               </div>
@@ -250,7 +250,7 @@ export default function SettingsModal({ onClose, onLogout }: SettingsModalProps)
             </h3>
             
             {/* Theme Toggle */}
-            <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
+            <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-zinc-800/40 backdrop-blur-md rounded-2xl border border-white/40 dark:border-white/5 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-lg">
                   <Sun className="w-4 h-4" />
@@ -298,7 +298,7 @@ export default function SettingsModal({ onClose, onLogout }: SettingsModalProps)
             </div>
 
             {/* ============ NOTIFICATIONS SECTION ============ */}
-            <div className="space-y-3 p-4 bg-white dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
+            <div className="space-y-3 p-4 bg-white/60 dark:bg-zinc-800/40 backdrop-blur-md rounded-2xl border border-white/40 dark:border-white/5 shadow-sm">
               
               {/* Main toggle row */}
               <div className="flex items-center justify-between">

@@ -351,7 +351,7 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
       {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/80 px-3 sm:px-4 py-3 sm:py-4 backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950/80">
+      <header className="sticky top-0 z-20 border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-zinc-950/40 px-3 sm:px-4 py-3 sm:py-4 backdrop-blur-2xl shadow-sm">
         <div className="mx-auto max-w-lg">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500">

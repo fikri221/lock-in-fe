@@ -163,10 +163,10 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: "100vh" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="w-full max-w-md max-h-[85vh] sm:max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col"
+        className="w-full max-w-md max-h-[85vh] sm:max-h-[90vh] overflow-y-auto bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/10 flex flex-col"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b border-white/20 dark:border-white/10 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl shadow-sm">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <CirclePlus className="w-5 h-5 text-green-500" />
             New Habit
@@ -223,7 +223,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="w-12 h-12 flex items-center justify-center text-2xl bg-zinc-50 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 transition-colors shrink-0"
+                className="w-12 h-12 flex items-center justify-center text-2xl bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md rounded-xl border border-white/40 dark:border-white/10 hover:bg-white/80 dark:hover:bg-zinc-700/50 transition-colors shrink-0 shadow-sm"
               >
                 {formData.icon}
               </button>
@@ -234,7 +234,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
-                className="flex-1 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-2 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
+                className="flex-1 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-sm rounded-xl px-4 py-2 focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 transition-all focus:bg-white/80 dark:focus:bg-zinc-800/80"
                 autoFocus
               />
             </div>
@@ -424,7 +424,7 @@ export default function HabitForm({ onClose, onSubmit }: HabitFormProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-700">
+          <div className="flex items-center justify-between p-3 bg-white/60 dark:bg-zinc-800/40 backdrop-blur-md rounded-xl border border-white/40 dark:border-white/5 shadow-sm">
             <div className="flex items-center gap-2">
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center ${formData.reminderEnabled ? "bg-amber-100 text-amber-600" : "bg-zinc-200 text-zinc-500"}`}

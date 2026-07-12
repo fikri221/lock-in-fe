@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   /* config options here */
-  allowedDevOrigins: ["192.168.0.102.nip.io", "192.168.0.100.nip.io", "localhost"],
+  allowedDevOrigins: ["192.168.0.106.nip.io", "localhost"],
   // Allow any origin to access the API
   headers: () => {
     return [
